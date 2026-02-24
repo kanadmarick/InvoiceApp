@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit Invoice{% else %}Create Invoice{% endif %} - Invoice Management
+{% endblock %}
+
+{% block page_title %}
+    {% if form.instance.pk %}Edit Invoice{% else %}Create New Invoice{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+            <h3 class="text-xl font-bold text-white flex items-center">
+                <i class="fas fa-file-invoice mr-3"></i>
+                {% if form.instance.pk %}Edit Invoice{% else %}Create New Invoice{% endif %}
+            </h3>
+        </div>
+        
+        <div class="p-8">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                        <div>
+                            <p class="font-bold text-red-800">Please correct the errors below:</p>
+                            <ul class="text-red-600 text-sm mt-2 list-disc list-inside">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ field }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="bg-gray-50 rounded-lg p-5">
+                    <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4">Business</h4>
+                    <div class="form-group">
+                        <label for="{{ form.business.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                            {{ form.business.label }} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            {{ form.business }}
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        {% if form.business.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.business.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">
+                            Need a new business? <a class="text-indigo-600 hover:text-indigo-800" href="{% url 'businesses:business_create' %}">Create one</a>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-5">
+                    <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4">Client Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="{{ form.client_name.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.client_name.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.client_name }}
+                            {% if form.client_name.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.client_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.client_email.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.client_email.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.client_email }}
+                            {% if form.client_email.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.client_email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="form-group">
+                            <label for="{{ form.address_line_1.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.address_line_1.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.address_line_1 }}
+                            {% if form.address_line_1.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.address_line_1.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.address_line_2.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.address_line_2.label }}
+                            </label>
+                            {{ form.address_line_2 }}
+                            {% if form.address_line_2.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.address_line_2.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                        <div class="form-group">
+                            <label for="{{ form.city.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.city.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.city.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.state.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.state.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.state }}
+                            {% if form.state.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.state.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.pincode.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.pincode.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.pincode }}
+                            {% if form.pincode.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.pincode.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.country.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.country.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.country }}
+                            {% if form.country.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.country.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-5">
+                    <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4">Invoice Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="{{ form.invoice_number.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                                {{ form.invoice_number.label }} <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.invoice_number }}
+                            {% if form.invoice_number.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.invoice_number.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <label for="{{ form.notes.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">
+                            {{ form.notes.label }}
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <a href="{% url 'billings:billing_list' %}" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg transition-colors duration-200 flex items-center">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all duration-200 flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if form.instance.pk %}Update Invoice{% else %}Create Invoice{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ business.name }}{% endblock %}
+
+{% block content %}
+    <h1>{{ business.name }}</h1>
+    <p><strong>Owner:</strong> {{ business.owner }}</p>
+    <p><strong>Email:</strong> {{ business.email }}</p>
+    <p><strong>GSTIN:</strong> {{ business.gstin }}</p>
+    {% if business.logo %}
+        <img src="{{ business.logo.url }}" alt="{{ business.name }} logo" width="200">
+    {% endif %}
+    <a href="{% url 'businesses:business_update' business.pk %}">Edit</a>
+    {% if user.is_superuser or business.owner == user %}
+    <a href="{% url 'businesses:business_delete' business.pk %}">Delete</a>
+    {% endif %}
+{% endblock %}

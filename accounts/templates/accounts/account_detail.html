@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user.username }}{% endblock %}
+
+{% block content %}
+    <h1>{{ user.username }}</h1>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Phone Number:</strong> {{ user.profile.phone_number }}</p>
+    <p><strong>Premium User:</strong> {{ user.profile.is_premium|yesno:"Yes,No" }}</p>
+{% endblock %}

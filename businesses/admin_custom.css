@@ -1,0 +1,145 @@
+/*
+ * Django Admin Custom CSS
+ * Based on the "Colorful Dashboard Style"
+ */
+
+:root {
+    --header-bg: #1e293b; /* Slate 800 */
+    --sidebar-bg: #1e293b; /* Slate 800 */
+    --content-bg: #f1f5f9;   /* Slate 100 */
+    --text-light: #f8fafc;   /* Slate 50 */
+    --text-dark: #0f172a;    /* Slate 900 */
+    --accent-purple: #8b5cf6; /* Violet 500 */
+    --accent-blue: #3b82f6;   /* Blue 500 */
+    --accent-green: #22c55e;  /* Green 500 */
+    --accent-orange: #f97316; /* Orange 500 */
+    --border-color: #e2e8f0; /* Slate 200 */
+}
+
+/* Body and Content Background */
+body, #content {
+    background: var(--content-bg);
+    color: var(--text-dark);
+}
+
+/* --- Header --- */
+#header {
+    background: var(--header-bg);
+    color: var(--text-light);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#header a:link, #header a:visited {
+    color: var(--text-light);
+}
+
+/* --- Sidebar --- */
+.nav-sidebar {
+    background: var(--sidebar-bg);
+}
+
+.nav-sidebar .nav-link {
+    color: var(--text-light) !important;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+.nav-sidebar .nav-link:hover {
+    background: #334155; /* Slate 700 */
+}
+
+.nav-sidebar .nav-link.active {
+    background: var(--accent-purple) !important;
+    color: var(--text-light) !important;
+    font-weight: 600;
+}
+
+.nav-sidebar .nav-item > .nav-link {
+    display: flex;
+    align-items: center;
+}
+
+.nav-sidebar .nav-item i.fas {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* --- Modules & Dashboard Cards --- */
+.module {
+    background: #ffffff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.module h2, .module caption {
+    background: #f8fafc; /* Slate 50 */
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    font-weight: 600;
+    border-radius: 8px 8px 0 0;
+}
+
+/* --- Summary Cards --- */
+.app-auth .module, .app-businesses .module, .app-accounts .module, .app-billings .module {
+    position: relative;
+    padding-left: 10px;
+}
+
+.app-auth .module { border-left: 5px solid var(--accent-blue); }
+.app-businesses .module { border-left: 5px solid var(--accent-green); }
+.app-accounts .module { border-left: 5px solid var(--accent-orange); }
+.app-billings .module { border-left: 5px solid var(--accent-purple); }
+
+
+/* --- Tables --- */
+.results table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.results th {
+    background: #f8fafc; /* Slate 50 */
+    font-weight: 600;
+}
+
+.results tr:nth-of-type(odd) {
+    background-color: #fcfdff;
+}
+.results tr:nth-of-type(even) {
+    background-color: #ffffff;
+}
+
+.results tr:hover {
+    background-color: #f0f4ff !important;
+}
+
+/* --- Buttons --- */
+.button, input[type=submit], input[type=button], .submit-row input {
+    background: var(--accent-purple);
+    color: var(--text-light);
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: none;
+    transition: background 0.2s ease;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover {
+    background: #7c3aed; /* Violet 600 */
+}
+
+.button.default, .button.cancel-link {
+    background: #64748b; /* Slate 500 */
+}
+.button.default:hover, .button.cancel-link:hover {
+    background: #475569; /* Slate 600 */
+}
+
+/* Make breadcrumbs less prominent */
+.breadcrumbs {
+    background: transparent;
+    padding-left: 0;
+}

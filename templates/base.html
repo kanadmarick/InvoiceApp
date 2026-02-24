@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Invoice Management{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-indigo-600 to-indigo-800 text-white flex-shrink-0 shadow-xl">
+            <div class="p-6 border-b border-indigo-500">
+                <h1 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-file-invoice-dollar mr-3"></i>
+                    Invoice Pro
+                </h1>
+            </div>
+            <nav class="mt-6 px-4">
+                <a href="{% url 'home' %}" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1 {% if request.path == '/' %}bg-indigo-700{% endif %}">
+                    <i class="fas fa-home w-6 mr-3"></i>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                <a href="{% url 'businesses:business_list' %}" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1 {% if '/businesses/' in request.path %}bg-indigo-700{% endif %}">
+                    <i class="fas fa-building w-6 mr-3"></i>
+                    <span class="font-medium">Businesses</span>
+                </a>
+                <a href="{% url 'billings:billing_list' %}" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1 {% if '/billings/' in request.path %}bg-indigo-700{% endif %}">
+                    <i class="fas fa-file-invoice w-6 mr-3"></i>
+                    <span class="font-medium">Invoices</span>
+                </a>
+                <a href="{% url 'accounts:account_list' %}" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1 {% if '/accounts/' in request.path %}bg-indigo-700{% endif %}">
+                    <i class="fas fa-users w-6 mr-3"></i>
+                    <span class="font-medium">Accounts</span>
+                </a>
+                <div class="border-t border-indigo-500 my-4"></div>
+                <a href="/admin/" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1">
+                    <i class="fas fa-cog w-6 mr-3"></i>
+                    <span class="font-medium">Admin Panel</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between px-8 py-4">
+                    <h2 class="text-2xl font-bold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h2>
+                    <div class="flex items-center space-x-4">
+                        <button class="p-2 rounded-lg hover:bg-gray-100 relative">
+                            <i class="fas fa-bell text-gray-600"></i>
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                                {% if user.is_authenticated %}{{ user.username|slice:":1"|upper }}{% else %}U{% endif %}
+                            </div>
+                            <span class="ml-2 text-gray-700 font-medium">{% if user.is_authenticated %}{{ user.username }}{% else %}Guest{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto bg-gray-50 p-8">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

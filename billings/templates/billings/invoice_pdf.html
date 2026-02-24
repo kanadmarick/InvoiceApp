@@ -1,0 +1,63 @@
+{% load currency %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice</title>
+    <style>
+        /* Add your print-specific styles here */
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Invoice {{ invoice.invoice_number }}</h1>
+    <p>Client: {{ invoice.client.name }}</p>
+    
+    <h2>Milestones</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for milestone in invoice.milestones.all %}
+                <tr>
+                    <td>{{ milestone.description }}</td>
+                    <td>{{ milestone.amount|rupee }}</td>
+                    <td>{{ milestone.due_date }}</td>
+                    <td>{{ milestone.status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Items</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.unit_price|rupee }}</td>
+                    <td>{{ item.line_total|rupee }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Total: {{ invoice.total_amount|rupee }}</h2>
+</body>
+</html>

@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load currency %}
+
+{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Invoice {{ invoice.invoice_number }}</h1>
+            <p class="text-gray-500 mt-1">Client: {{ invoice.client.name }}</p>
+        </div>
+        <div class="text-right">
+            <p class="text-gray-500 text-sm">Created</p>
+            <p class="text-gray-800 font-semibold">{{ invoice.created_at|date:"M d, Y" }}</p>
+        </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-4 items-center">
+        <span class="text-gray-600">Status:</span>
+        {% if invoice.status == 'PAID' %}
+            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">PAID</span>
+        {% elif invoice.status == 'PENDING' %}
+            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">PENDING</span>
+        {% elif invoice.status == 'OVERDUE' %}
+            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold">OVERDUE</span>
+        {% elif invoice.status == 'PARTIALLY_PAID' %}
+            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">PARTIAL</span>
+        {% else %}
+            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold">DRAFT</span>
+        {% endif %}
+        <span class="ml-auto text-gray-600">Total:</span>
+        <span class="text-xl font-bold text-gray-900">{{ invoice.total_amount|rupee }}</span>
+    </div>
+
+    {% if invoice.notes %}
+    <div class="mt-6">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Notes</h3>
+        <p class="text-gray-700 mt-2">{{ invoice.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="mt-6 flex space-x-3">
+        <a href="{% url 'billings:invoice_update' invoice.pk %}" class="px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-semibold rounded-lg">Edit</a>
+        <a href="{% url 'billings:invoice_delete' invoice.pk %}" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg">Delete</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+        <h3 class="text-lg font-bold text-white">Invoice Items</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 text-sm">
+                    <th class="px-6 py-3 text-left font-semibold">Description</th>
+                    <th class="px-6 py-3 text-right font-semibold">Quantity</th>
+                    <th class="px-6 py-3 text-right font-semibold">Unit Price</th>
+                    <th class="px-6 py-3 text-right font-semibold">Line Total</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for item in invoice.items.all %}
+                <tr>
+                    <td class="px-6 py-4 text-gray-800">{{ item.description }}</td>
+                    <td class="px-6 py-4 text-right text-gray-700">{{ item.quantity }}</td>
+                    <td class="px-6 py-4 text-right text-gray-700">{{ item.unit_price|rupee }}</td>
+                    <td class="px-6 py-4 text-right font-semibold text-gray-900">{{ item.line_total|rupee }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-6 text-center text-gray-500">No items added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+        <h3 class="text-lg font-bold text-white">Milestones</h3>
+    </div>
+    <div class="p-6 space-y-3">
+        {% for milestone in invoice.milestones.all %}
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div>
+                <p class="font-semibold text-gray-800">{{ milestone.description }}</p>
+                <p class="text-sm text-gray-500">Due: {{ milestone.due_date|date:"M d, Y" }}</p>
+                <p class="text-sm text-gray-500">Amount: {{ milestone.amount|rupee }}</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-semibold
+                {% if milestone.status == 'PAID' %}bg-green-100 text-green-800
+                {% elif milestone.status == 'OVERDUE' %}bg-red-100 text-red-800
+                {% else %}bg-yellow-100 text-yellow-800{% endif %}
+            ">
+                {{ milestone.status }}
+            </span>
+        </div>
+        {% empty %}
+        <div class="text-gray-500 text-center">No milestones added yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

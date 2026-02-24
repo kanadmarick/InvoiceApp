@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+    {{ title }} | Invoices Admin
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block branding %}
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            <i class="fas fa-file-invoice-dollar" style="margin-right: 10px;"></i>Invoices Administration
+        </a>
+    </h1>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        /* 
+           Overriding Django Admin styles to match the Tailwind config 
+           Primary-600: #4f46e5
+           Primary-700: #4338ca
+        */
+        :root {
+            --primary-600: #4f46e5;
+            --primary-700: #4338ca;
+        }
+
+        #header {
+            background: var(--primary-600);
+            color: #fff;
+        }
+
+        div.breadcrumbs {
+            background: var(--primary-700);
+        }
+
+        .module h2, .module caption, .inline-group h2 {
+            background: var(--primary-600);
+        }
+
+        .button.default, input[type=submit].default, .submit-row input.default {
+            background: var(--primary-600);
+        }
+        
+        a:link, a:visited {
+            color: var(--primary-600);
+        }
+    </style>
+{% endblock %}

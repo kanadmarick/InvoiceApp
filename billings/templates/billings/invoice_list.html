@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load currency %}
+
+{% block title %}Invoices - Invoice Management{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+
+{% block content %}
+<!-- Header with Actions -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h3 class="text-2xl font-bold text-gray-800">All Invoices</h3>
+        <p class="text-gray-500 mt-1">Manage and track your invoices</p>
+    </div>
+    <div class="flex space-x-3">
+        <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors duration-200 flex items-center">
+            <i class="fas fa-filter mr-2"></i>
+            Filter
+        </button>
+        <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center shadow-lg hover:shadow-xl">
+            <i class="fas fa-download mr-2"></i>
+            Export
+        </button>
+        <a href="{% url 'billings:invoice_create' %}" class="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all duration-200 flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
+            <i class="fas fa-plus mr-2"></i>
+            Create Invoice
+        </a>
+    </div>
+</div>
+
+<!-- Invoice Table -->
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                    <th class="px-6 py-4 text-left font-bold text-sm uppercase tracking-wider">Invoice #</th>
+                    <th class="px-6 py-4 text-left font-bold text-sm uppercase tracking-wider">Client</th>
+                    <th class="px-6 py-4 text-left font-bold text-sm uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-left font-bold text-sm uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-4 text-left font-bold text-sm uppercase tracking-wider">Created</th>
+                    <th class="px-6 py-4 text-center font-bold text-sm uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for invoice in invoices %}
+                <tr class="{% cycle 'bg-white' 'bg-gray-50' %} hover:bg-indigo-50 transition-colors duration-150">
+                    <td class="px-6 py-4">
+                        <a href="{% url 'billings:invoice_detail' invoice.pk %}" class="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center">
+                            <i class="fas fa-file-invoice mr-2"></i>
+                            {{ invoice.invoice_number }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-sm mr-3">
+                                {{ invoice.client.name|slice:":1"|upper }}
+                            </div>
+                            <span class="font-medium text-gray-800">{{ invoice.client.name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if invoice.status == 'PAID' %}
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold flex items-center w-fit">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                PAID
+                            </span>
+                        {% elif invoice.status == 'PENDING' %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold flex items-center w-fit">
+                                <i class="fas fa-clock mr-1"></i>
+                                PENDING
+                            </span>
+                        {% elif invoice.status == 'OVERDUE' %}
+                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold flex items-center w-fit">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                OVERDUE
+                            </span>
+                        {% elif invoice.status == 'PARTIALLY_PAID' %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold flex items-center w-fit">
+                                <i class="fas fa-check mr-1"></i>
+                                PARTIAL
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold flex items-center w-fit">
+                                <i class="fas fa-file mr-1"></i>
+                                DRAFT
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-gray-900 font-bold text-lg">{{ invoice.total_amount|rupee }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ invoice.created_at|date:"M d, Y" }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center space-x-2">
+                            <a href="{% url 'billings:invoice_detail' invoice.pk %}" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors duration-200" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'billings:invoice_update' invoice.pk %}" class="p-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-600 rounded-lg transition-colors duration-200" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'billings:invoice_delete' invoice.pk %}" class="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors duration-200" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                            <p class="text-gray-500 text-lg font-medium">No invoices found</p>
+                            <a href="{% url 'billings:invoice_create' %}" class="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors duration-200">
+                                Create Your First Invoice
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination (if needed) -->
+<div class="mt-6 flex items-center justify-between">
+    <p class="text-gray-600">Showing <span class="font-semibold">{{ invoices|length }}</span> invoices</p>
+    <div class="flex space-x-2">
+        <button class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <i class="fas fa-chevron-left mr-2"></i>
+            Previous
+        </button>
+        <button class="px-4 py-2 bg-indigo-600 border-2 border-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+            Next
+            <i class="fas fa-chevron-right ml-2"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
