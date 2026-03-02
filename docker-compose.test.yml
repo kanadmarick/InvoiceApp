@@ -14,7 +14,7 @@ services:
     command: sh -c "python manage.py wait_for_db && python manage.py migrate && python manage.py test && flake8 ."
     
     # Remove inherited env_file requirement from base compose in CI/CD
-    env_file: null
+    env_file: []
     
     # Test-specific environment variables
     # Provides all necessary config without requiring .env file
