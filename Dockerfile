@@ -6,8 +6,11 @@ LABEL maintainer="kanadmarick@gmail.com"
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
+# Setting the environment variable 'PYTHONDONTWRITEBYTECODE' to 1, instructing Python not to create .pyc files for faster imports during deployment or build processes that require isolation between developers.
+ENV PYTHONUNBUFFERED 1 
+# With PYTHONUNBUFFERED 1, every print statement or log message appears instantly, giving you true real-time visibility into your container's behavior.
+ENV PATH="/py/bin:$PATH" 
+# Adding the virtual environment's bin directory to the PATH environment variable allows you to run the installed packages without needing to specify the full path, making it easier to execute commands and scripts that rely on those packages.
 # Set the working directory in the container
 WORKDIR /app
 
