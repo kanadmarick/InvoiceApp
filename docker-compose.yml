@@ -40,7 +40,7 @@ services:
     container_name: invoices_db                 # Friendly name for docker ps / logs
     restart: unless-stopped                     # Auto-restart on crash or host reboot
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data/  # Persist data to local folder
+      - postgres_data:/var/lib/postgresql/data/  # Persist data using a named volume
     # Postgres environment variables — read from .env values
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-postgres}
@@ -53,3 +53,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+# Define the named volume used by the 'db' service
+volumes:
+  postgres_data:
