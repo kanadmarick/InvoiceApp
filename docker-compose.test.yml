@@ -26,6 +26,12 @@ services:
       - DB_PASSWORD=testpassword123
       - SECRET_KEY=test-secret-key-for-ci-cd-only-not-for-production-use
       - ALLOWED_HOSTS=localhost,127.0.0.1
+
+    # In CI, don't block startup on strict healthcheck status.
+    # wait_for_db in the command handles readiness robustly.
+    depends_on:
+      db:
+        condition: service_started
       
   db:
     # Remove persistent volume for tests - data will be ephemeral (stored in container)

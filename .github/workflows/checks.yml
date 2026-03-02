@@ -27,43 +27,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 4: Build Docker images and run tests
-      # Step 4: Create a .env file for the test environment
-      # This file provides necessary environment variables for docker-compose.
-      # In a CI environment, we use non-secret, test-specific values.
-      - name: Create .env file
+      # Step 4: Build Docker images with the CI test override file.
+      # This ensures test-specific env/settings are used in CI.
+      - name: Build images
         run: |
-          echo "SECRET_KEY=dummy-secret-key-for-ci-tests" >> .env
-          echo "DEBUG=0" >> .env
-          echo "DATABASE_URL=postgres://test_user:test_password@db:5432/test_db" >> .env
-          echo "POSTGRES_DB=test_db" >> .env
-          echo "POSTGRES_USER=test_user" >> .env
-          echo "POSTGRES_PASSWORD=test_password" >> .env
+          docker compose -f docker-compose.yml -f docker-compose.test.yml build --no-cache
 
-      # Step 5: Build the 'web' service image with caching enabled.
-      # This uses the GitHub Actions cache backend to store Docker layers.
-      # Subsequent runs will be much faster as they can reuse unchanged layers.
-      - name: Build web image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          # We tag the image with the name docker-compose expects ('<project>_<service>')
-          # to ensure it's used in the next step.
-          tags: invoices_web:latest
-          # 'load: true' makes the image available to subsequent steps in the job.
-          load: true
-          # Use the GitHub Actions cache for layers.
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Step 6: Run tests using the pre-built, cached image.
-      # docker-compose will find and use the 'invoices_web:latest' image.
+      # Step 5: Run tests with the CI test override file.
+      # This guarantees DB_HOST=db and skips local .env dependency.
       - name: Run tests
         run: |
-          docker compose run --rm web sh -c "python manage.py wait_for_db && python manage.py migrate && python manage.py test && flake8 ."
+          docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm web sh -c "python manage.py wait_for_db && python manage.py migrate && python manage.py test && flake8 ."
 
-      # Step 7: Clean up containers and volumes after the run.
+      # Step 6: Clean up containers and volumes after the run.
       # The -v flag is crucial to remove the database volume, ensuring a clean slate for the next workflow run.
       - name: Clean up
         if: always()
-        run: docker compose down -v --remove-orphans
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v --remove-orphans
