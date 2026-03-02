@@ -26,6 +26,10 @@ services:
     # Load environment variables from .env (contains SECRET_KEY, DB credentials, etc.)
     env_file:
       - .env
+    # Construct DATABASE_URL to ensure the web container connects to the 'db' service, not 'localhost'.
+    # It uses other variables from the .env file or falls back to defaults.
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}
     # Wait for the db service to be ready before starting the web service
     depends_on:
       db:
