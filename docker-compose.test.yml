@@ -6,14 +6,24 @@
 
 services:
   web:
-    # Override command for testing
+    # Override the default web service command to run automated tests
+    # 1. wait_for_db: Ensures PostgreSQL is ready before proceeding
+    # 2. migrate: Applies database migrations
+    # 3. test: Runs Django unit tests
+    # 4. flake8: Lints Python code for style violations
     command: sh -c "python manage.py wait_for_db && python manage.py migrate && python manage.py test && flake8 ."
-    # Use test environment variables if needed
+    
+    # Test-specific environment variables
+    # - DEBUG=False: Runs tests in production-like mode
+    # - DB_HOST=db: Points to the containerized database service
     environment:
       - DEBUG=False
       - DB_HOST=db
       
   db:
-    # Use in-memory storage for faster tests (data doesn't persist)
+    # Clear the persistent volume from base config (volumes: [])
+    # Use tmpfs (in-memory filesystem) instead for faster test execution
+    # Data is lost when container stops, which is fine for CI/CD tests
+    volumes: []
     tmpfs:
       - /var/lib/postgresql/data
