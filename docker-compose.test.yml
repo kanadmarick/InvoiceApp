@@ -21,9 +21,8 @@ services:
       - DB_HOST=db
       
   db:
-    # Clear the persistent volume from base config (volumes: [])
-    # Use tmpfs (in-memory filesystem) instead for faster test execution
-    # Data is lost when container stops, which is fine for CI/CD tests
+    # Remove persistent volume for tests - data will be ephemeral (stored in container)
+    # This makes tests faster and data is automatically cleaned up when container stops
     volumes: []
-    tmpfs:
-      - /var/lib/postgresql/data
+    # Don't need to expose ports in CI/CD
+    ports: []
