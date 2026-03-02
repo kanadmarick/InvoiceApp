@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load currency %}
+{% load humanize %}
 
 {% block title %}Dashboard - Invoice Management{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
@@ -130,7 +131,7 @@
                     </div>
                     <div>
                         <p class="font-medium text-gray-800">{{ activity.title }}</p>
-                        <p class="text-sm text-gray-500">{{ activity.timestamp|timesince }} ago</p>
+                        <p class="text-sm text-gray-500">{{ activity.timestamp|naturaltime }}</p>
                     </div>
                 </div>
                 <span class="px-3 py-1 rounded-full text-xs font-semibold {{ activity.badge_class }}">

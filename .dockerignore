@@ -1,0 +1,35 @@
+# Ignore the version control system's directory and files
+.git
+.gitignore
+
+# Ignore the Dockerfile and related files, as they are not needed inside the image
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Ignore Python virtual environments - dependencies are installed via requirements.txt
+.venv
+venv
+
+# Ignore Python bytecode and cache folders
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore editor-specific and project setting files
+.vscode/
+
+# Ignore the local PostgreSQL data directory
+postgres_data/
+
+# Ignore log files, which should not be part of the image
+logs/
+
+# Ignore environment files - these are supplied securely at runtime, not built into the image
+.env*
+.env.example
+
+# Ignore local development databases
+*.sqlite3
+db.sqlite3

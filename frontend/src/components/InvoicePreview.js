@@ -1,6 +1,12 @@
 import React from 'react';
 
+/**
+ * InvoicePreview — Renders a styled invoice preview with customizable brand color.
+ * Shows: client info, milestones timeline, line items, and total amount.
+ * The brandColor prop is passed as a CSS custom property for theming.
+ */
 const InvoicePreview = ({ invoice, brandColor }) => {
+  // CSS custom property allows brand color to cascade through the component
   const brandStyle = {
     '--brand-color': brandColor,
   };

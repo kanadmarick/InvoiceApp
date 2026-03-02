@@ -1,4 +1,5 @@
 {% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,6 +53,24 @@
                     <span class="font-medium">Accounts</span>
                 </a>
                 <div class="border-t border-indigo-500 my-4"></div>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-red-600 hover:translate-x-1 text-left">
+                            <i class="fas fa-sign-out-alt w-6 mr-3"></i>
+                            <span class="font-medium">Logout</span>
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1">
+                        <i class="fas fa-sign-in-alt w-6 mr-3"></i>
+                        <span class="font-medium">Login</span>
+                    </a>
+                    <a href="{% url 'accounts:register' %}" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1">
+                        <i class="fas fa-user-plus w-6 mr-3"></i>
+                        <span class="font-medium">Register</span>
+                    </a>
+                {% endif %}
                 <a href="/admin/" class="flex items-center px-4 py-3 mb-2 rounded-lg transition-all duration-200 hover:bg-indigo-700 hover:translate-x-1">
                     <i class="fas fa-cog w-6 mr-3"></i>
                     <span class="font-medium">Admin Panel</span>
@@ -70,12 +89,21 @@
                             <i class="fas fa-bell text-gray-600"></i>
                             <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                         </button>
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
-                                {% if user.is_authenticated %}{{ user.username|slice:":1"|upper }}{% else %}U{% endif %}
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'accounts:account_detail' user.pk %}" class="flex items-center hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors duration-200">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                                    {{ user.username|slice:":1"|upper }}
+                                </div>
+                                <span class="ml-2 text-gray-700 font-medium">{{ user.username }}</span>
+                            </a>
+                        {% else %}
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                                    U
+                                </div>
+                                <span class="ml-2 text-gray-700 font-medium">Guest</span>
                             </div>
-                            <span class="ml-2 text-gray-700 font-medium">{% if user.is_authenticated %}{{ user.username }}{% else %}Guest{% endif %}</span>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </header>

@@ -1,3 +1,5 @@
+// Sample draft items — pre-saved line items a business can quickly add to invoices.
+// In production, these would be fetched from the DraftItem model via API.
 export const sampleDraftItems = [
     {
         id: 1,

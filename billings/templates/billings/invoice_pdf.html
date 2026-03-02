@@ -1,4 +1,5 @@
 {% load currency %}
+{% load humanize %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,7 +30,7 @@
                 <tr>
                     <td>{{ milestone.description }}</td>
                     <td>{{ milestone.amount|rupee }}</td>
-                    <td>{{ milestone.due_date }}</td>
+                    <td>{{ milestone.due_date|naturalday:"Y-m-d" }}</td>
                     <td>{{ milestone.status }}</td>
                 </tr>
             {% endfor %}

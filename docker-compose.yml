@@ -1,0 +1,55 @@
+# =============================================================
+# Docker Compose — PostgreSQL database service
+# Replaces local Postgres install with a containerized instance
+# Usage: docker compose up -d   (start)
+#        docker compose down     (stop)
+#        docker compose down -v  (stop + delete volume data)
+# =============================================================
+
+services:
+  # Django web application service
+  web:
+    # Build the image from the Dockerfile in the current directory
+    build:
+      context: .
+    # Friendly name for the container
+    container_name: invoices_web
+    # Auto-restart the container if it crashes or the host reboots
+    restart: unless-stopped
+    # Map container port 8000 to host port 8000
+    ports:
+      - "8000:8000"
+    # Mount the current directory to /app in the container for development
+    # This allows code changes to be reflected without rebuilding the image
+    volumes:
+      - .:/app
+    # Load environment variables from .env (contains SECRET_KEY, DB credentials, etc.)
+    env_file:
+      - .env
+    # Override DB_HOST for container networking — 'db' is the service name, not 'localhost'
+    environment:
+      - DB_HOST=db
+    # Wait for the db service to be ready before starting the web service
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # PostgreSQL 15 database container
+  db:
+    image: postgres:15                          # Official Postgres 15 image from Docker Hub
+    container_name: invoices_db                 # Friendly name for docker ps / logs
+    restart: unless-stopped                     # Auto-restart on crash or host reboot
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data/  # Persist data to local folder (survives container restarts)
+    # Postgres environment variables — read from .env values (DB_NAME, DB_USER, DB_PASSWORD)
+    environment:
+      - POSTGRES_DB=${DB_NAME:-postgres}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-2927}
+    ports:
+      - "5432:5432"                             # Map container port 5432 → host port 5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

@@ -1,0 +1,17 @@
+[flake8]
+# Allow longer lines to accommodate detailed inline explanatory comments
+max-line-length = 180
+# Exclude specific directories and files from linting
+exclude =
+    .git,
+    __pycache__,
+    env,
+    venv,
+    .venv,
+    build,
+    dist,
+    *.egg-info,
+    migrations,
+    settings.py,
+    manage.py,
+    requirements.txt

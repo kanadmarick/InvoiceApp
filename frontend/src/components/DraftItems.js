@@ -1,5 +1,10 @@
 import React from 'react';
 
+/**
+ * DraftItems — Displays a list of pre-saved line items that can be quickly
+ * added to the current invoice. Each item has a description and unit price.
+ * Clicking "Add to Invoice" moves the item from this list into the invoice.
+ */
 const DraftItems = ({ draftItems, onAddItem }) => {
   return (
     <div className="p-4">

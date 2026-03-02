@@ -22,6 +22,10 @@ db.sqlite3-journal
 /media
 /staticfiles
 
+# Log files — directory is tracked via .gitkeep, but contents are ignored
+logs/*
+!logs/.gitkeep
+
 # IDE
 .vscode/
 .idea/
@@ -36,6 +40,7 @@ db.sqlite3-journal
 
 # Database
 *.db
+postgres_data/  # Docker Postgres volume — persisted data, never commit
 
 # Migrations (optional - uncomment if you don't want to track them)
 # */migrations/*.py

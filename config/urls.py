@@ -20,14 +20,34 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 
+# Root URL routing — delegates to each app's own urls.py
 urlpatterns = [
+    # Django admin panel
     path('admin/', admin.site.urls),
+    # Dashboard homepage
     path('', views.index, name='home'),
-    path('accounts/', include('accounts.urls', namespace='accounts')),
-    path('businesses/', include('businesses.urls', namespace='businesses')),
-    path('billings/', include('billings.urls', namespace='billings')),
+    path(
+        'accounts/',
+        include(
+            'accounts.urls',
+            namespace='accounts')),
+    # Auth & user profiles
+    path(
+        'businesses/',
+        include(
+            'businesses.urls',
+            namespace='businesses')),
+    # Business CRUD
+    path(
+        'billings/',
+        include(
+            'billings.urls',
+            namespace='billings')),
+    # Invoice management
 ]
 
-# Serve media files during development
+# Serve user-uploaded media files during development (nginx/S3 handles
+# this in production)
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

@@ -1,10 +1,9 @@
 """
-ASGI config for myproject project.
+ASGI config for the Invoices project.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
+ASGI (Asynchronous Server Gateway Interface) supports async views,
+WebSockets, and long-lived connections. Used with servers like Daphne or Uvicorn.
+The 'application' variable is the entry point the server calls.
 """
 
 import os

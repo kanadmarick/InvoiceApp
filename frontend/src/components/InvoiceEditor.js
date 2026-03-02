@@ -1,12 +1,17 @@
 import React from 'react';
 
+/**
+ * InvoiceEditor — A raw JSON editor for the invoice object.
+ * Users can directly edit the JSON to modify invoice data.
+ * Changes are parsed and sent to the parent via onInvoiceChange callback.
+ */
 const InvoiceEditor = ({ invoice, onInvoiceChange }) => {
   const handleChange = (e) => {
     try {
       const newInvoice = JSON.parse(e.target.value);
       onInvoiceChange(newInvoice);
     } catch (error) {
-      // Ignore invalid JSON
+      // Ignore invalid JSON while user is still typing
     }
   };
 

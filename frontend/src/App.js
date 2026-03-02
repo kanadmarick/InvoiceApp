@@ -5,15 +5,23 @@ import DraftItems from './components/DraftItems';
 import { sampleInvoice } from './sample-invoice';
 import { sampleDraftItems } from './sample-draft-items';
 
+/**
+ * Main App component — provides a split-pane invoice editor.
+ * Left side: JSON editor + draft items to add.
+ * Right side: Live invoice preview with customizable brand color.
+ */
 function App() {
+  // State: current invoice data, available draft items, and brand color
   const [invoice, setInvoice] = useState(sampleInvoice);
   const [draftItems, setDraftItems] = useState(sampleDraftItems);
   const [brandColor, setBrandColor] = useState('#000000');
 
+  // Updates the entire invoice object when JSON is edited
   const handleInvoiceChange = (newInvoice) => {
     setInvoice(newInvoice);
   };
 
+  // Moves a draft item into the invoice's line items and removes it from drafts
   const handleAddItem = (item) => {
     const newItem = {
       id: invoice.items.length + 1,

@@ -1,3 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS directives — these are processed by the Tailwind build step */
+@tailwind base;        /* Browser reset and base element styles */
+@tailwind components;  /* Component classes (e.g., .btn) */
+@tailwind utilities;   /* Utility classes (e.g., .flex, .p-4, .text-xl) */

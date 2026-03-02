@@ -1,10 +1,9 @@
 """
-WSGI config for myproject project.
+WSGI config for the Invoices project.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
+WSGI (Web Server Gateway Interface) is the standard for deploying
+Django with traditional sync servers like Gunicorn or uWSGI.
+The 'application' variable is the entry point the server calls.
 """
 
 import os

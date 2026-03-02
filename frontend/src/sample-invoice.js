@@ -1,3 +1,5 @@
+// Sample invoice data used for the React frontend preview.
+// This is mock data — in production, this would come from the Django API.
 export const sampleInvoice = {
   invoice_number: 'INV-001',
   client: {

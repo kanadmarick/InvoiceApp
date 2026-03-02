@@ -1,6 +1,41 @@
+# ASGI reference implementation for Django
 asgiref==3.10.0
+
+# The core Django web framework
 Django==5.2.7
+
+# Application for handling Cross-Origin Resource Sharing (CORS)
+django-cors-headers==4.9.0
+
+# Powerful and flexible toolkit for building Web APIs
+djangorestframework==3.16.1
+
+# JSON Web Token authentication support for Django REST Framework
+djangorestframework_simplejwt==5.5.1
+
+# Python Imaging Library fork, for image fields in Django
 pillow==12.1.1
+
+# PostgreSQL database adapter for Python
 psycopg2-binary==2.9.11
+
+# Python implementation of JSON Web Tokens (JWT)
+PyJWT==2.11.0
+
+# Reads key-value pairs from a .env file and sets them as environment variables
+python-dotenv==1.2.1
+
+# Non-validating SQL parser for Python
 sqlparse==0.5.3
+
+# Provides IANA time zone data
 tzdata==2025.2
+
+# WSGI HTTP Server for UNIX
+gunicorn==22.0.0
+
+# Tool for style guide enforcement
+flake8==7.1.1
+
+# Framework for managing and maintaining multi-language pre-commit hooks
+pre-commit==4.1.0

@@ -1,12 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+// Tailwind CSS configuration — scans both React components and Django templates
 module.exports = {
   content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "../templates/**/*.html",
-    "../**/templates/**/*.html",
+    "./src/**/*.{js,jsx,ts,tsx}",     // React frontend components
+    "../templates/**/*.html",          // Project-level Django templates
+    "../**/templates/**/*.html",       // App-level Django templates
   ],
   theme: {
     extend: {
+      // Custom indigo/violet color palette used throughout the app
       colors: {
         primary: {
           50: '#eef2ff',

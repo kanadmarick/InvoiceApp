@@ -1,10 +1,112 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}{{ user.username }}{% endblock %}
 
 {% block content %}
-    <h1>{{ user.username }}</h1>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Phone Number:</strong> {{ user.profile.phone_number }}</p>
-    <p><strong>Premium User:</strong> {{ user.profile.is_premium|yesno:"Yes,No" }}</p>
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+    <!-- Header -->
+    <div class="h-32 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+    
+    <!-- Profile Section -->
+    <div class="px-8 pb-8">
+        <!-- Avatar -->
+        <div class="flex items-end -mt-16 mb-6">
+            {% if user.profile_image %}
+                <img src="{{ user.profile_image.url }}" alt="{{ user.username }}" class="w-32 h-32 rounded-lg object-cover border-4 border-white shadow-lg">
+            {% else %}
+                <div class="w-32 h-32 rounded-lg bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white text-5xl font-bold border-4 border-white shadow-lg">
+                    {{ user.username|slice:":1"|upper }}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- User Info -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">{{ user.full_name }}</h1>
+            <p class="text-gray-600 text-lg">@{{ user.username }}</p>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Left Column -->
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Email</p>
+                    <p class="text-lg font-medium text-gray-900">{{ user.email }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Phone Number</p>
+                    <p class="text-lg font-medium text-gray-900">{{ user.phone_number|default:"Not set" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">User Status</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        {% if user.is_superuser %}
+                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold">
+                                <i class="fas fa-crown mr-1"></i>ADMIN
+                            </span>
+                        {% elif user.is_staff %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">
+                                <i class="fas fa-user-shield mr-1"></i>STAFF
+                            </span>
+                        {% endif %}
+                        {% if user.is_premium %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold">
+                                <i class="fas fa-star mr-1"></i>PREMIUM
+                            </span>
+                        {% endif %}
+                        {% if user.is_active %}
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">
+                                <i class="fas fa-check-circle mr-1"></i>ACTIVE
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-bold">
+                                <i class="fas fa-times-circle mr-1"></i>INACTIVE
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Businesses</p>
+                    <p class="text-3xl font-bold text-indigo-600">{{ user.businesses.count }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Member Since</p>
+                    <p class="text-lg font-medium text-gray-900">{{ user.date_joined|naturalday:"\M d, Y" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Last Login</p>
+                    <p class="text-lg font-medium text-gray-900">
+                        {% if user.last_login %}
+                            {{ user.last_login|naturaltime }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bio -->
+        {% if user.bio %}
+        <div class="bg-gray-50 p-4 rounded-lg mb-8">
+            <p class="text-sm text-gray-500 uppercase tracking-wide mb-2">Bio</p>
+            <p class="text-gray-700">{{ user.bio }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Back Link -->
+        <div class="pt-6 border-t border-gray-200">
+            <a href="{% url 'accounts:account_list' %}" class="inline-flex items-center px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors duration-200">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Accounts
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

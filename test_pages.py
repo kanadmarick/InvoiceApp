@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""Quick smoke test — hits each page URL and checks for HTTP 200 OK.
+Run with: python test_pages.py (requires the Django dev server to be running)
+"""
 import urllib.request
 import sys
 
@@ -18,7 +21,11 @@ for name, url in urls:
         response = urllib.request.urlopen(url, timeout=5)
         content = response.read()
         if response.status == 200:
-            print(f'[OK]  {name:20s} Status {response.status} ({len(content)} bytes)')
+            print(
+                f'[OK]  {
+                    name:20s} Status {
+                    response.status} ({
+                    len(content)} bytes)')
         else:
             print(f'[WARN] {name:20s} Status {response.status}')
     except Exception as e:

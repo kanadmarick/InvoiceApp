@@ -1,3 +1,5 @@
+# Custom template filter for formatting amounts in Indian Rupee notation.
+# Usage in templates: {{ amount|rupee }}  →  "₹ 1,23,456.78"
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from django import template
@@ -6,11 +8,13 @@ register = template.Library()
 
 
 def _group_indian_number(value_str):
+    """Formats a number string with Indian-style grouping (e.g., 1,23,456).
+    Indian system: last 3 digits grouped, then every 2 digits after that."""
     if len(value_str) <= 3:
         return value_str
 
-    last_three = value_str[-3:]
-    rest = value_str[:-3]
+    last_three = value_str[-3:]  # Last 3 digits stay together
+    rest = value_str[:-3]        # Remaining digits grouped in pairs
     parts = []
 
     while len(rest) > 2:
@@ -25,8 +29,11 @@ def _group_indian_number(value_str):
 
 @register.filter
 def rupee(value):
+    """Template filter: converts a number to Indian Rupee format with ₹ symbol.
+    Examples: 123456.78 → '₹ 1,23,456.78' | 5000 → '₹ 5,000'"""
     try:
-        amount = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        amount = Decimal(value).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP)
     except (InvalidOperation, TypeError):
         return value
 

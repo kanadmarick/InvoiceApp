@@ -1,6 +1,7 @@
 /*
  * Django Admin Custom CSS
- * Based on the "Colorful Dashboard Style"
+ * Overrides default admin styling with a modern slate/violet color scheme.
+ * Loaded via BusinessAdmin.Media in businesses/admin.py.
  */
 
 :root {

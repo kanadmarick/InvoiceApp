@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: flake8
+        name: flake8
+        # Run flake8 inside the running Docker container
+        entry: docker compose exec -T web flake8
+        language: system
+        types: [python]
+        pass_filenames: true

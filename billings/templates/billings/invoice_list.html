@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load currency %}
+{% load humanize %}
 
 {% block title %}Invoices - Invoice Management{% endblock %}
 {% block page_title %}Invoices{% endblock %}
@@ -12,7 +13,7 @@
         <p class="text-gray-500 mt-1">Manage and track your invoices</p>
     </div>
     <div class="flex space-x-3">
-        <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors duration-200 flex items-center">
+        <button onclick="toggleFilter()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors duration-200 flex items-center">
             <i class="fas fa-filter mr-2"></i>
             Filter
         </button>
@@ -26,6 +27,84 @@
         </a>
     </div>
 </div>
+
+<!-- Filter Panel -->
+<div id="filterPanel" class="mb-6 bg-white rounded-xl shadow-lg p-6 {% if not status_filter and not client_filter and not search_query %}hidden{% endif %}">
+    <form method="get" action="{% url 'billings:invoice_list' %}" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-search mr-2 text-indigo-600"></i>Search
+                </label>
+                <input 
+                    type="text" 
+                    name="search" 
+                    value="{{ search_query }}"
+                    placeholder="Invoice # or Client name"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+            </div>
+            
+            <!-- Status Filter -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-tag mr-2 text-indigo-600"></i>Status
+                </label>
+                <select 
+                    name="status" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                    <option value="">All Statuses</option>
+                    <option value="DRAFT" {% if status_filter == 'DRAFT' %}selected{% endif %}>Draft</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="PAID" {% if status_filter == 'PAID' %}selected{% endif %}>Paid</option>
+                    <option value="PARTIALLY_PAID" {% if status_filter == 'PARTIALLY_PAID' %}selected{% endif %}>Partially Paid</option>
+                    <option value="OVERDUE" {% if status_filter == 'OVERDUE' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+            
+            <!-- Client Filter -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-user mr-2 text-indigo-600"></i>Client
+                </label>
+                <input 
+                    type="text" 
+                    name="client" 
+                    value="{{ client_filter }}"
+                    placeholder="Client name"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-3">
+            <button 
+                type="submit"
+                class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center"
+            >
+                <i class="fas fa-filter mr-2"></i>
+                Apply Filters
+            </button>
+            <a 
+                href="{% url 'billings:invoice_list' %}"
+                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors duration-200 flex items-center"
+            >
+                <i class="fas fa-times mr-2"></i>
+                Clear Filters
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleFilter() {
+    const filterPanel = document.getElementById('filterPanel');
+    filterPanel.classList.toggle('hidden');
+}
+</script>
 
 <!-- Invoice Table -->
 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -90,7 +169,7 @@
                         <span class="text-gray-900 font-bold text-lg">{{ invoice.total_amount|rupee }}</span>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
-                        {{ invoice.created_at|date:"M d, Y" }}
+                        {{ invoice.created_at|naturalday:"M d, Y" }}
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center space-x-2">
@@ -126,16 +205,45 @@
 
 <!-- Pagination (if needed) -->
 <div class="mt-6 flex items-center justify-between">
-    <p class="text-gray-600">Showing <span class="font-semibold">{{ invoices|length }}</span> invoices</p>
+    <p class="text-gray-600">Showing <span class="font-semibold">{{ invoices|length }}</span> invoices{% if is_paginated %} of {{ paginator.count }}{% endif %}</p>
+    {% if is_paginated %}
     <div class="flex space-x-2">
-        <button class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if client_filter %}&client={{ client_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <i class="fas fa-chevron-left mr-2"></i>
+            First
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if client_filter %}&client={{ client_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <i class="fas fa-chevron-left mr-2"></i>
+            Previous
+        </a>
+        {% else %}
+        <button disabled class="px-4 py-2 bg-gray-100 border-2 border-gray-200 text-gray-400 font-semibold rounded-lg cursor-not-allowed">
             <i class="fas fa-chevron-left mr-2"></i>
             Previous
         </button>
-        <button class="px-4 py-2 bg-indigo-600 border-2 border-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+        {% endif %}
+        
+        <span class="px-4 py-2 flex items-center text-gray-700 font-semibold">
+            Page {{ page_obj.number }} of {{ paginator.num_pages }}
+        </span>
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if client_filter %}&client={{ client_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-indigo-600 border-2 border-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+            Next
+            <i class="fas fa-chevron-right ml-2"></i>
+        </a>
+        <a href="?page={{ paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if client_filter %}&client={{ client_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="px-4 py-2 bg-indigo-600 border-2 border-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+            Last
+            <i class="fas fa-chevron-right ml-2"></i>
+        </a>
+        {% else %}
+        <button disabled class="px-4 py-2 bg-gray-100 border-2 border-gray-200 text-gray-400 font-semibold rounded-lg cursor-not-allowed">
             Next
             <i class="fas fa-chevron-right ml-2"></i>
         </button>
+        {% endif %}
     </div>
+    {% endif %}
 </div>
 {% endblock %}
