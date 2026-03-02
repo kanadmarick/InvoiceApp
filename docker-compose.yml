@@ -40,16 +40,16 @@ services:
     container_name: invoices_db                 # Friendly name for docker ps / logs
     restart: unless-stopped                     # Auto-restart on crash or host reboot
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data/  # Persist data to local folder (survives container restarts)
-    # Postgres environment variables — read from .env values (DB_NAME, DB_USER, DB_PASSWORD)
+      - ./postgres_data:/var/lib/postgresql/data/  # Persist data to local folder
+    # Postgres environment variables — read from .env values
     environment:
-      - POSTGRES_DB=${DB_NAME:-postgres}
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-2927}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"                             # Map container port 5432 → host port 5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
