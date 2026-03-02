@@ -22,7 +22,7 @@
     {% for business in businesses %}
     <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1">
         <!-- Color Bar -->
-        <div class="h-2 bg-gradient-to-r from-purple-500 to-pink-500" style="background: linear-gradient(to right, {{ business.brand_color }}, {{ business.brand_color }}cc);"></div>
+        <div class="h-2 bg-gradient-to-r from-purple-400 to-pink-300"></div>
         
         <div class="p-6">
             <!-- Logo/Icon -->
@@ -31,7 +31,7 @@
                     {% if business.logo_url_safe %}
                         <img src="{{ business.logo_url_safe }}" alt="{{ business.name }}" class="w-16 h-16 rounded-lg object-cover border-2 border-gray-200">
                     {% else %}
-                        <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white text-2xl font-bold shadow-md" style="background: linear-gradient(135deg, {{ business.brand_color }}, {{ business.brand_color }}cc);">
+                        <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white text-2xl font-bold shadow-md bg-gradient-to-br from-purple-400 to-pink-300">
                             {{ business.name|slice:":1"|upper }}
                         </div>
                     {% endif %}

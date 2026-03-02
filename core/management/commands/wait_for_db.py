@@ -10,7 +10,7 @@ from django.db.utils import OperationalError
 
 class Command(BaseCommand):
     """Django command to wait for database to be available"""
-    
+
     help = 'Wait for database to be available'
 
     def handle(self, *args, **options):
@@ -19,7 +19,7 @@ class Command(BaseCommand):
         db_conn = None
         max_retries = 30
         retry_count = 0
-        
+
         while not db_conn and retry_count < max_retries:
             try:
                 # Try to get database connection
@@ -30,7 +30,7 @@ class Command(BaseCommand):
                 retry_count += 1
                 self.stdout.write(f'Database unavailable, waiting 1 second... (attempt {retry_count}/{max_retries})')
                 time.sleep(1)
-        
+
         if not db_conn:
             self.stdout.write(self.style.ERROR('Database connection failed after maximum retries'))
             raise OperationalError('Could not connect to database')
