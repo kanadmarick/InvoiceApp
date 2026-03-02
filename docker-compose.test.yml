@@ -1,0 +1,19 @@
+# =============================================================
+# Docker Compose Test Configuration
+# Extends base docker-compose.yml for CI/CD testing
+# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml up
+# =============================================================
+
+services:
+  web:
+    # Override command for testing
+    command: sh -c "python manage.py wait_for_db && python manage.py migrate && python manage.py test && flake8 ."
+    # Use test environment variables if needed
+    environment:
+      - DEBUG=False
+      - DB_HOST=db
+      
+  db:
+    # Use in-memory storage for faster tests (data doesn't persist)
+    tmpfs:
+      - /var/lib/postgresql/data
