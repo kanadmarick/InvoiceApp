@@ -26,9 +26,6 @@ services:
     # Load environment variables from .env (contains SECRET_KEY, DB credentials, etc.)
     env_file:
       - .env
-    # Override DB_HOST for container networking — 'db' is the service name, not 'localhost'
-    environment:
-      - DB_HOST=db
     # Wait for the db service to be ready before starting the web service
     depends_on:
       db:
