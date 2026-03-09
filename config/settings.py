@@ -244,8 +244,9 @@ CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,
 # Activated when DEBUG=False (production environment)
 # =============================================================
 if not DEBUG:
-    # HTTPS/SSL
-    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')
+    # HTTPS/SSL — default to False so tests and HTTP-only deploys work out of the box.
+    # Set SECURE_SSL_REDIRECT=True in .env.prod after obtaining an SSL certificate.
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 'yes')
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

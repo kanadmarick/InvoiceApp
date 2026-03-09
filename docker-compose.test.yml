@@ -26,6 +26,7 @@ services:
       - DB_PASSWORD=testpassword123
       - SECRET_KEY=test-secret-key-for-ci-cd-only-not-for-production-use
       - ALLOWED_HOSTS=localhost,127.0.0.1
+      - SECURE_SSL_REDIRECT=False
 
     # In CI, don't block startup on strict healthcheck status.
     # wait_for_db in the command handles readiness robustly.
