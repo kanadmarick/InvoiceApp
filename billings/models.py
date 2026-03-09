@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from core.models import BaseModel, ContactInfoModel
 from businesses.models import Business
@@ -28,12 +30,12 @@ class Invoice(BaseModel):
     notes = models.TextField(blank=True)  # Optional notes shown on the invoice
 
     @property
-    def total_amount(self):
+    def total_amount(self) -> Decimal:
         """Sum of all line items (quantity * unit_price)"""
-        return sum(item.line_total for item in self.items.all())
+        return sum((item.line_total for item in self.items.all()), Decimal('0'))
 
     @property
-    def status(self):
+    def status(self) -> str:
         """
         Derives invoice status from milestone payment states:
         DRAFT → no milestones yet
@@ -69,7 +71,7 @@ class InvoiceItem(BaseModel):
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
 
     @property
-    def line_total(self):
+    def line_total(self) -> Decimal:
         """Calculated total for this line item"""
         return self.quantity * self.unit_price
 

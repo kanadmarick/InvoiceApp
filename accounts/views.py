@@ -2,9 +2,10 @@ import os  # Access environment variables for guest credentials
 import logging  # Log guest login events
 
 from django.contrib import messages
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import LoginView
@@ -28,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 # ── HTML Views (Template-based) ────────────────────────────────────────
+# NOTE: These views are from the original template-based architecture.
+# They are currently unused in the React-based SPA but kept for reference.
 
 
 class AccountListView(ListView):
@@ -200,6 +203,20 @@ class LogoutAPIView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        request=inline_serializer(
+            name='LogoutRequestSerializer',
+            fields={
+                'refresh': serializers.CharField(required=False),
+            },
+        ),
+        responses=inline_serializer(
+            name='LogoutResponseSerializer',
+            fields={
+                'message': serializers.CharField(),
+            },
+        ),
+    )
     def post(self, request):
         # Blacklist the refresh token to prevent reuse
         try:
@@ -230,6 +247,33 @@ class GuestLoginAPIView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=None,
+        responses={
+            200: inline_serializer(
+                name='GuestLoginSuccessSerializer',
+                fields={
+                    'message': serializers.CharField(),
+                    'user': UserSerializer(),
+                    'tokens': inline_serializer(
+                        name='GuestLoginTokensSerializer',
+                        fields={
+                            'refresh': serializers.CharField(),
+                            'access': serializers.CharField(),
+                        },
+                    ),
+                },
+            ),
+            401: inline_serializer(
+                name='GuestLoginUnauthorizedSerializer',
+                fields={'error': serializers.CharField()},
+            ),
+            503: inline_serializer(
+                name='GuestLoginUnavailableSerializer',
+                fields={'error': serializers.CharField()},
+            ),
+        },
+    )
     def post(self, request):
         # Read guest credentials from environment variables
         guest_username = os.getenv('GUEST_USERNAME')
@@ -245,6 +289,8 @@ class GuestLoginAPIView(APIView):
             )
 
         # Authenticate the guest user against the database
+        # NOTE: This assumes the guest user already exists.
+        # In a real deployment, a management command or migration should ensure this user exists.
         user = authenticate(
             request=request,
             username=guest_username,

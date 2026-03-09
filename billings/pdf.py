@@ -5,7 +5,9 @@ from playwright.async_api import async_playwright
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from rest_framework.views import APIView
-from rest_framework import permissions, status
+from rest_framework import permissions, serializers
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 
 from .models import Invoice
 
@@ -20,6 +22,19 @@ class InvoicePDFAPIView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description='PDF file response', response=OpenApiTypes.BINARY),
+            404: inline_serializer(
+                name='InvoicePdfNotFoundSerializer',
+                fields={'detail': serializers.CharField()},
+            ),
+            500: inline_serializer(
+                name='InvoicePdfErrorSerializer',
+                fields={'detail': serializers.CharField()},
+            ),
+        },
+    )
     def get(self, request, pk):
         # Fetch invoice, scoped to the current user's businesses
         user_businesses = request.user.businesses.all()

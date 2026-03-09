@@ -5,7 +5,8 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import permissions
+from rest_framework import permissions, serializers
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 from billings.models import Invoice, Milestone
 
@@ -25,7 +26,10 @@ def _status_badge(status):
 
 @login_required(login_url='accounts:login')
 def index(request):
-    """Dashboard view — aggregates financial stats and recent activity for the logged-in user."""
+    """
+    Dashboard view — aggregates financial stats and recent activity for the logged-in user.
+    NOTE: This is the legacy server-rendered view. The React frontend uses DashboardAPIView.
+    """
     # Get only current user's businesses (security: isolates data per user)
     user_businesses = request.user.businesses.all()
 
@@ -163,6 +167,22 @@ class DashboardAPIView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses=inline_serializer(
+            name='DashboardResponseSerializer',
+            fields={
+                'total_invoices': serializers.IntegerField(),
+                'paid_amount': serializers.CharField(),
+                'pending_amount': serializers.CharField(),
+                'overdue_amount': serializers.CharField(),
+                'pending_count': serializers.IntegerField(),
+                'overdue_count': serializers.IntegerField(),
+                'recent_activity': serializers.ListField(
+                    child=serializers.DictField(),
+                ),
+            },
+        ),
+    )
     def get(self, request):
         user_businesses = request.user.businesses.all()
 

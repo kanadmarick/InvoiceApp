@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.db import models
 from django.conf import settings
 from core.models import BaseModel, ContactInfoModel
@@ -25,7 +27,7 @@ class Business(BaseModel, ContactInfoModel):
         return self.name
 
     @property
-    def logo_url_safe(self):
+    def logo_url_safe(self) -> Optional[str]:
         """Return logo URL if exists, None otherwise (avoids template errors)"""
         if self.logo:
             return self.logo.url

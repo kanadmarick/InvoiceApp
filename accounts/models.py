@@ -33,6 +33,6 @@ class CustomUser(AbstractUser):
         return self.username
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         """Return full name or username if not set"""
         return f"{self.first_name} {self.last_name}".strip() or self.username
