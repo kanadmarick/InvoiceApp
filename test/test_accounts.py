@@ -1,7 +1,7 @@
 # Tests for the accounts app — DRF API authentication endpoints.
 # Guest login reads credentials from os.environ (not django.conf.settings).
 import os
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from unittest.mock import patch
 from rest_framework.test import APIClient
