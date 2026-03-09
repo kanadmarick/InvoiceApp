@@ -1,75 +1,154 @@
-# Django base test case and settings access for temporary test overrides.
-from django.test import TestCase
-from django.conf import settings
-# Project user model helper and patch utility for mocking settings values.
+# Tests for the accounts app — DRF API authentication endpoints.
+# Guest login reads credentials from os.environ (not django.conf.settings).
+import os
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from unittest.mock import patch
-# DRF API client is available for API-style tests where needed.
 from rest_framework.test import APIClient
+from rest_framework import status
 
 User = get_user_model()
 
 
-class GuestLoginTests(TestCase):
-    """Tests for guest authentication behavior using mocked guest settings."""
+class LoginAPITests(TestCase):
+    """Tests for the POST /accounts/login/ endpoint."""
 
     def setUp(self):
-        # Keep an API client ready for future API endpoint tests in this class.
         self.api_client = APIClient()
-
-    @patch('django.conf.settings.GUEST_PASSWORD', 'mockpassword')
-    @patch('django.conf.settings.GUEST_USERNAME', 'mockguest')
-    def test_guest_login_view_success(self):
-        """
-        Test that a user can log in using the guest credentials,
-        mocking the settings to ensure test isolation.
-        This assumes a login URL at '/accounts/login/'.
-        """
-        # Read the mocked guest credentials from settings.
-        guest_username = settings.GUEST_USERNAME
-        guest_password = settings.GUEST_PASSWORD
-
-        # Create a user matching those guest credentials.
-        User.objects.create_user(
-            username=guest_username,
-            password=guest_password
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123',
         )
 
-        # Submit the login form and follow redirects to the landing page.
-        response = self.client.post('/accounts/login/', {
-            'username': guest_username,
-            'password': guest_password,
-        }, follow=True)
+    def test_login_success(self):
+        """Valid credentials should return 200 with JWT tokens."""
+        response = self.api_client.post('/accounts/login/', {
+            'username': 'testuser',
+            'password': 'testpass123',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('tokens', response.data)
+        self.assertIn('access', response.data['tokens'])
+        self.assertIn('refresh', response.data['tokens'])
+        self.assertEqual(response.data['user']['username'], 'testuser')
 
-        # Confirm login flow completes successfully.
-        self.assertEqual(response.status_code, 200)
-        # Check for a logout link, which usually appears after login.
-        self.assertContains(response, 'Log out', msg_prefix="Logout link not found after login")
-        # Verify the user is actually logged in and is the correct user.
-        self.assertTrue(response.context['user'].is_authenticated)
-        self.assertEqual(response.context['user'].username, guest_username)
-
-    @patch('django.conf.settings.GUEST_PASSWORD', 'mockpassword')
-    @patch('django.conf.settings.GUEST_USERNAME', 'mockguest')
-    def test_guest_login_view_failure_wrong_password(self):
-        """Test that a user cannot log in with an incorrect password."""
-        # Read the mocked guest credentials from settings.
-        guest_username = settings.GUEST_USERNAME
-        guest_password = settings.GUEST_PASSWORD
-
-        # Create a valid guest user first.
-        User.objects.create_user(username=guest_username, password=guest_password)
-
-        # Attempt login with an invalid password.
-        response = self.client.post('/accounts/login/', {
-            'username': guest_username,
+    def test_login_wrong_password(self):
+        """Invalid password should return 400."""
+        response = self.api_client.post('/accounts/login/', {
+            'username': 'testuser',
             'password': 'wrongpassword',
-        }, follow=True)
+        }, format='json')
+        self.assertIn(response.status_code, [
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_401_UNAUTHORIZED,
+        ])
 
-        # Response still returns 200 because form is re-rendered with errors.
-        self.assertEqual(response.status_code, 200)
-        # User should not be authenticated
-        self.assertFalse(response.context['user'].is_authenticated)
-        # Should probably see an error message on the login form.
-        # This message is part of Django's default auth form.
-        self.assertContains(response, "Please enter a correct username and password.")
+    def test_login_nonexistent_user(self):
+        """Login with a username that doesn't exist should fail."""
+        response = self.api_client.post('/accounts/login/', {
+            'username': 'nosuchuser',
+            'password': 'anything',
+        }, format='json')
+        self.assertIn(response.status_code, [
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_401_UNAUTHORIZED,
+        ])
+
+
+class RegisterAPITests(TestCase):
+    """Tests for the POST /accounts/register/ endpoint."""
+
+    def setUp(self):
+        self.api_client = APIClient()
+
+    def test_register_success(self):
+        """Valid registration data should create user and return tokens."""
+        response = self.api_client.post('/accounts/register/', {
+            'username': 'newuser',
+            'password': 'SecurePass123!',
+            'password2': 'SecurePass123!',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('tokens', response.data)
+        self.assertTrue(User.objects.filter(username='newuser').exists())
+
+    def test_register_password_mismatch(self):
+        """Mismatched passwords should return 400."""
+        response = self.api_client.post('/accounts/register/', {
+            'username': 'newuser',
+            'password': 'SecurePass123!',
+            'password2': 'DifferentPass456!',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_duplicate_username(self):
+        """Registering with an existing username should return 400."""
+        User.objects.create_user(username='existing', password='pass123')
+        response = self.api_client.post('/accounts/register/', {
+            'username': 'existing',
+            'password': 'SecurePass123!',
+            'password2': 'SecurePass123!',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class GuestLoginTests(TestCase):
+    """Tests for the POST /accounts/guest-login/ endpoint."""
+
+    def setUp(self):
+        self.api_client = APIClient()
+
+    @patch.dict(os.environ, {'GUEST_USERNAME': 'mockguest', 'GUEST_PASSWORD': 'mockpassword'})
+    def test_guest_login_success(self):
+        """Guest login should return JWT tokens when credentials are valid."""
+        # Create a user matching the mocked guest credentials
+        User.objects.create_user(username='mockguest', password='mockpassword')
+        response = self.api_client.post('/accounts/guest-login/', format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('tokens', response.data)
+        self.assertIn('access', response.data['tokens'])
+        self.assertEqual(response.data['user']['username'], 'mockguest')
+
+    @patch.dict(os.environ, {'GUEST_USERNAME': 'mockguest', 'GUEST_PASSWORD': 'mockpassword'})
+    def test_guest_login_failure_wrong_credentials(self):
+        """Guest login should fail if the guest user doesn't exist in the DB."""
+        # Don't create the guest user — credentials won't match anything
+        response = self.api_client.post('/accounts/guest-login/', format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_guest_login_not_configured(self):
+        """Guest login should return 503 when env vars are not set."""
+        response = self.api_client.post('/accounts/guest-login/', format='json')
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class LogoutAPITests(TestCase):
+    """Tests for the POST /accounts/logout/ endpoint."""
+
+    def setUp(self):
+        self.api_client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123',
+        )
+
+    def test_logout_success(self):
+        """Authenticated user can log out."""
+        # Login first to get tokens
+        login_response = self.api_client.post('/accounts/login/', {
+            'username': 'testuser',
+            'password': 'testpass123',
+        }, format='json')
+        tokens = login_response.data['tokens']
+        # Set auth header and logout
+        self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+        response = self.api_client.post('/accounts/logout/', {
+            'refresh': tokens['refresh'],
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_logout_unauthenticated(self):
+        """Unauthenticated logout should return 401."""
+        response = self.api_client.post('/accounts/logout/', format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

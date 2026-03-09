@@ -1,107 +1,137 @@
-# Django base test case and user model helper.
+# Tests for the businesses app — DRF API endpoints.
+# All business endpoints require JWT authentication.
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-# Mock utility and optional DRF API client support.
-from unittest.mock import patch
 from rest_framework.test import APIClient
+from rest_framework import status
 
-# This test file makes some assumptions about your project structure:
-# 1. You have an app named 'businesses'.
-# 2. Inside 'businesses/models.py', there is a 'Business' model.
-# 3. The 'Business' model has a 'name' field and an 'owner' foreign key to the User model.
-# 4. The URL for listing businesses is '/businesses/'.
-# 5. The URL for creating a new business is '/businesses/create/'.
-# These paths and fields may need to be adjusted to match your actual project.
 from businesses.models import Business
 
 User = get_user_model()
 
 
-class BusinessLogicTests(TestCase):
-    """
-    Tests for the Business model and its related views, going beyond
-    simple page availability checks.
-    """
+class BusinessModelTests(TestCase):
+    """Tests for the Business model."""
 
     @classmethod
     def setUpTestData(cls):
-        """Set up data for the whole test class for efficiency."""
-        # Create one reusable user for all tests in this class.
         cls.user = User.objects.create_user(
             username='testuser',
-            password='password123'
+            password='password123',
         )
-        # Create an initial business record owned by that user.
         cls.business = Business.objects.create(
             name="Test Business Inc.",
-            owner=cls.user
+            email="test@example.com",
+            owner=cls.user,
         )
-
-    def setUp(self):
-        # Keep APIClient available for future API-specific tests.
-        self.api_client = APIClient()
 
     def test_business_model_str(self):
         """Test the string representation of the Business model."""
-        # Ensure __str__ returns the business name as expected.
         self.assertEqual(str(self.business), "Test Business Inc.")
 
-    def test_business_list_view_for_authenticated_user(self):
-        """
-        Test that an authenticated user can see their business on the list page.
-        """
-        # Log in so protected business pages can be accessed.
-        self.client.login(username='testuser', password='password123')
-        # Request the business list view.
-        response = self.client.get('/businesses/')
-        # Confirm page loads successfully.
-        self.assertEqual(response.status_code, 200)
-        # Confirm expected business name appears in rendered output.
-        self.assertContains(response, "Test Business Inc.")
-        # The default context variable name for a ListView is 'object_list'.
-        self.assertIn(self.business, response.context['object_list'])
+    def test_business_owner_relationship(self):
+        """Business should be linked to the correct owner."""
+        self.assertEqual(self.business.owner, self.user)
+        self.assertIn(self.business, self.user.businesses.all())
 
-    def test_business_create_view_unauthenticated_redirect(self):
-        """Test that an unauthenticated user is redirected from the create page."""
-        response = self.client.get('/businesses/create/')
-        # Expect a redirect to the login page. The default is '/accounts/login/'.
-        self.assertRedirects(response, '/accounts/login/?next=/businesses/create/')
 
-    def test_business_create_view_post(self):
-        """
-        Test that an authenticated user can create a new business via a POST request.
-        """
-        # Log in before submitting create form.
-        self.client.login(username='testuser', password='password123')
-        create_url = '/businesses/create/'
+class BusinessAPITests(TestCase):
+    """Tests for the Business DRF API endpoints."""
 
-        # Test POSTing new business data
-        initial_business_count = Business.objects.count()
-        new_business_name = "New Awesome Company"
-        post_data = {
-            'name': new_business_name,
-            # Add other required form fields here if any
-        }
-        # Assuming a successful creation redirects to the list view
-        response = self.client.post(create_url, post_data, follow=True)
+    def setUp(self):
+        self.api_client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='password123',
+        )
+        self.other_user = User.objects.create_user(
+            username='otheruser',
+            password='password123',
+        )
+        self.business = Business.objects.create(
+            name="Test Business Inc.",
+            email="test@example.com",
+            owner=self.user,
+        )
+        # Authenticate as testuser via JWT
+        login_response = self.api_client.post('/accounts/login/', {
+            'username': 'testuser',
+            'password': 'password123',
+        }, format='json')
+        self.token = login_response.data['tokens']['access']
+        self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
 
-        # Check that a new business was created
-        self.assertEqual(Business.objects.count(), initial_business_count + 1)
+    def test_business_list_authenticated(self):
+        """Authenticated user should see their own businesses."""
+        response = self.api_client.get('/businesses/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Response is paginated — businesses are in 'results'
+        results = response.data.get('results', response.data)
+        business_names = [b['name'] for b in results]
+        self.assertIn("Test Business Inc.", business_names)
 
-        # Check that we were redirected, probably to the business list page
-        self.assertRedirects(response, '/businesses/')
+    def test_business_list_unauthenticated(self):
+        """Unauthenticated request should return 401."""
+        client = APIClient()  # No credentials
+        response = client.get('/businesses/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        # Check that the new business exists in the database and is owned by the user
-        new_business = Business.objects.get(name=new_business_name)
+    def test_business_create(self):
+        """Authenticated user can create a new business via POST."""
+        initial_count = Business.objects.count()
+        response = self.api_client.post('/businesses/', {
+            'name': 'New Awesome Company',
+            'email': 'new@example.com',
+            'address_line_1': '123 Main St',
+            'city': 'Mumbai',
+            'state': 'Maharashtra',
+            'pincode': '400001',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Business.objects.count(), initial_count + 1)
+        new_business = Business.objects.get(name='New Awesome Company')
         self.assertEqual(new_business.owner, self.user)
 
-        # Check that the new business name appears on the page we were redirected to
-        self.assertContains(response, new_business_name)
+    def test_business_create_unauthenticated(self):
+        """Unauthenticated user cannot create a business."""
+        client = APIClient()
+        response = client.post('/businesses/', {
+            'name': 'Unauthorized Business',
+            'email': 'unauth@example.com',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    @patch('businesses.models.Business.save')
-    def test_business_creation_calls_save(self, mock_save):
-        """Test that creating a business instance calls the save method."""
-        # We use objects.create, which should trigger the save method.
-        # Since save is mocked, this won't actually write to the DB, which is fine for this unit test.
-        Business.objects.create(name="Mocked Save Business", owner=self.user)
-        self.assertTrue(mock_save.called)
+    def test_business_detail(self):
+        """Owner can retrieve their business details."""
+        response = self.api_client.get(f'/businesses/{self.business.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], "Test Business Inc.")
+
+    def test_business_update(self):
+        """Owner can update their business via PATCH."""
+        response = self.api_client.patch(f'/businesses/{self.business.id}/', {
+            'name': 'Updated Business Name',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.business.refresh_from_db()
+        self.assertEqual(self.business.name, 'Updated Business Name')
+
+    def test_business_delete(self):
+        """Owner can delete their business."""
+        response = self.api_client.delete(f'/businesses/{self.business.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Business.objects.filter(id=self.business.id).exists())
+
+    def test_business_isolation_between_users(self):
+        """User should not see other users' businesses."""
+        # Create a business owned by other_user
+        Business.objects.create(
+            name="Other User's Business",
+            email="other@example.com",
+            owner=self.other_user,
+        )
+        response = self.api_client.get('/businesses/')
+        results = response.data.get('results', response.data)
+        business_names = [b['name'] for b in results]
+        self.assertNotIn("Other User's Business", business_names)
+        self.assertIn("Test Business Inc.", business_names)
