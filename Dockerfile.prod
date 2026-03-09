@@ -1,0 +1,61 @@
+# =============================================================
+# Dockerfile.prod — Production Django + Gunicorn
+# Builds the Django backend and collects static files.
+# Static files are shared with Nginx via a Docker volume.
+# =============================================================
+
+FROM python:3.13-slim
+
+LABEL maintainer="kanadmarick@gmail.com"
+
+# Python best practices for containers
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/py/bin:$PATH"
+
+WORKDIR /app
+
+# Install system dependencies needed at runtime (psycopg2, Playwright)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright's Chromium browser and its OS-level dependencies
+# Required for PDF generation (billings/pdf.py)
+RUN playwright install --with-deps chromium
+
+# Copy application code
+COPY . /app/
+
+# Create logs directory (container filesystem only, will be recreated each deploy)
+RUN mkdir -p /app/logs
+
+# Collect static files into /app/staticfiles (shared volume with Nginx)
+RUN SECRET_KEY=build-placeholder python manage.py collectstatic --noinput
+
+# Create non-root user for security
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Create media directory with proper permissions
+RUN mkdir -p /app/media && chown -R appuser:appgroup /app/media /app/logs /app/staticfiles
+
+# Expose the port (documentation only — not published to host)
+EXPOSE 8000
+
+# Switch to non-root user
+USER appuser
+
+# Entrypoint: run migrations then start Gunicorn
+# Using shell form so we can chain commands
+CMD sh -c "python manage.py migrate --noinput && \
+    python manage.py collectstatic --noinput && \
+    gunicorn config.wsgi:application \
+      --bind 0.0.0.0:8000 \
+      --workers 3 \
+      --timeout 120 \
+      --access-logfile - \
+      --error-logfile -"

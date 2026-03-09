@@ -18,8 +18,15 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Playwright's Chromium browser and its OS-level dependencies
+# Required for PDF generation (billings/pdf.py)
+RUN playwright install --with-deps chromium
+
 # Copy the rest of the application's code
 COPY . /app/
+
+# Collect static files (admin CSS/JS, DRF assets) so WhiteNoise can serve them
+RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
 # Expose the port the app runs on
 EXPOSE 8000

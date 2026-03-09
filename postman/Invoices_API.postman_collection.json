@@ -1,0 +1,614 @@
+{
+  "info": {
+    "name": "Django Invoices API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Get CSRF Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const csrfCookie = pm.cookies.get('csrftoken');",
+                  "console.log('CSRF Cookie:', csrfCookie);",
+                  "console.log('CSRF Cookie Length:', csrfCookie ? csrfCookie.length : 0);",
+                  "",
+                  "pm.test('CSRF cookie exists', function () {",
+                  "  pm.expect(csrfCookie).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('CSRF token has valid length', function () {",
+                  "  pm.expect(csrfCookie).to.have.lengthOf.at.least(32);",
+                  "});",
+                  "",
+                  "if (csrfCookie) {",
+                  "  pm.environment.set('csrf_token', csrfCookie);",
+                  "  console.log('CSRF token saved to environment:', pm.environment.get('csrf_token'));",
+                  "}",
+                  "",
+                  "pm.test('CSRF token saved to environment', function () {",
+                  "  const savedToken = pm.environment.get('csrf_token');",
+                  "  pm.expect(savedToken).to.exist;",
+                  "  pm.expect(savedToken).to.have.lengthOf.at.least(32);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "login",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Guest Login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/guest-login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "guest-login",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/accounts/login/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "login",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/accounts/logout/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/logout/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "logout",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Businesses",
+      "item": [
+        {
+          "name": "List Businesses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/businesses/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Business",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const csrfToken = pm.environment.get('csrf_token');",
+                  "console.log('CSRF Token from environment:', csrfToken);",
+                  "console.log('CSRF Token length:', csrfToken ? csrfToken.length : 0);",
+                  "",
+                  "if (!csrfToken || csrfToken.length < 32) {",
+                  "  console.error('ERROR: CSRF token is missing or invalid!');",
+                  "  console.error('Please run \"Get CSRF Token\" request first.');",
+                  "  throw new Error('CSRF token required. Run \"Get CSRF Token\" first.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/businesses/create/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Acme Corporation",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "contact@acme.com",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/businesses/create/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "create",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Business Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Business",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/businesses/{{business_id}}/update/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Acme Corporation Updated",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}/update/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}",
+                "update",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Business",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/businesses/{{business_id}}/delete/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/businesses/{{business_id}}/delete/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "businesses",
+                "{{business_id}}",
+                "delete",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/billings/invoices/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "billings",
+                "invoices",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/billings/invoices/create/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "invoice_number",
+                  "value": "INV-2026-001",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "draft",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/billings/invoices/create/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "billings",
+                "invoices",
+                "create",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Invoice Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/billings/invoices/{{invoice_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "billings",
+                "invoices",
+                "{{invoice_id}}",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/billings/invoices/{{invoice_id}}/update/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "sent",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/billings/invoices/{{invoice_id}}/update/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "billings",
+                "invoices",
+                "{{invoice_id}}",
+                "update",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              },
+              {
+                "key": "Referer",
+                "value": "{{base_url}}/billings/invoices/{{invoice_id}}/delete/"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/billings/invoices/{{invoice_id}}/delete/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "billings",
+                "invoices",
+                "{{invoice_id}}",
+                "delete",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "username",
+      "value": "testuser"
+    },
+    {
+      "key": "password",
+      "value": "testpass123"
+    },
+    {
+      "key": "csrf_token",
+      "value": ""
+    },
+    {
+      "key": "business_id",
+      "value": ""
+    },
+    {
+      "key": "invoice_id",
+      "value": ""
+    }
+  ]
+}

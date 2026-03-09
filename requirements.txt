@@ -25,6 +25,9 @@ PyJWT==2.11.0
 # Reads key-value pairs from a .env file and sets them as environment variables
 python-dotenv==1.2.1
 
+# Parse DATABASE_URL environment variable for database configuration
+dj-database-url==2.3.0
+
 # Non-validating SQL parser for Python
 sqlparse==0.5.3
 
@@ -39,3 +42,10 @@ flake8==7.1.1
 
 # Framework for managing and maintaining multi-language pre-commit hooks
 pre-commit==4.1.0
+
+# OpenAPI 3 schema generation for Django REST Framework
+drf-spectacular==0.29.0
+
+# Simplified static file serving for Python web apps (serves static files with Gunicorn)
+whitenoise==6.9.0
+playwright==1.58.0 # For end-to-end testing of the frontend with Playwright

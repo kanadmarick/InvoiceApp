@@ -18,14 +18,20 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularJSONAPIView, SpectacularSwaggerView
 from . import views
 
 # Root URL routing — delegates to each app's own urls.py
 urlpatterns = [
     # Django admin panel
     path('admin/', admin.site.urls),
-    # Dashboard homepage
-    path('', views.index, name='home'),
+    # API landing page
+    path('', SpectacularSwaggerView.as_view(url_name='schema'), name='home'),
+    # Global OpenAPI schema and Swagger UI
+    path('api/schema/', SpectacularJSONAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # Dashboard API endpoint (JSON)
+    path('api/dashboard/', views.DashboardAPIView.as_view(), name='dashboard-api'),
     path(
         'accounts/',
         include(

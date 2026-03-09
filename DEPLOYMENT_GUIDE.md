@@ -1,237 +1,337 @@
-# Django Invoice App - Oracle Cloud Deployment Guide
+# Django Invoice App — Oracle Cloud Deployment Guide
+
+Complete guide to deploy on **Oracle Cloud Always Free Tier** (ARM Ampere A1, 4 OCPUs, 24 GB RAM).
+
+---
+
+## Architecture
+
+```
+Internet → Nginx (:80/:443) ─┬─ React SPA (static files)
+                              ├─ /admin/        → Gunicorn (:8000)
+                              ├─ /accounts/     → Gunicorn (:8000)
+                              ├─ /businesses/   → Gunicorn (:8000)
+                              ├─ /billings/     → Gunicorn (:8000)
+                              ├─ /api/          → Gunicorn (:8000)
+                              ├─ /static/       → Docker volume
+                              └─ /media/        → Docker volume
+                                    │
+                              PostgreSQL (:5432) — internal only
+```
+
+**Docker services:** `nginx` (Nginx + React build), `web` (Django + Gunicorn), `db` (PostgreSQL 15), `certbot` (SSL)
+
+---
 
 ## Prerequisites
-- Oracle Cloud instance running Ubuntu
-- SSH key pair generated
-- Public IP: `152.70.79.182`
 
-## Step 1: Configure Oracle Cloud Security Rules
+| Item | Details |
+|------|---------|
+| OCI Account | Free Tier with Always Free resources |
+| SSH Key | `ssh-key-2026-03-02.key` (your private key) |
+| VM Public IP | `152.70.79.182` |
+| Domain (optional) | Point an A record to `152.70.79.182` |
+| Git repo | Your Invoices repository pushed to GitHub |
 
-**IMPORTANT:** Before you can SSH into your instance, you need to configure the firewall rules in Oracle Cloud Console.
+---
 
-### Open Required Ports:
+## Step 1: OCI Console — Security List
 
-1. Go to **Oracle Cloud Console** → **Compute** → **Instances**
-2. Click on your instance name
-3. Under **Resources**, click **Virtual Cloud Network → Default Security List**
-4. Click **Add Ingress Rules** and add the following rules:
+Before connecting, open ports in **OCI Console → Networking → VCN → Default Security List → Add Ingress Rules**:
 
-| Source CIDR | Protocol | Port Range | Description |
-|-------------|----------|------------|-------------|
-| 0.0.0.0/0   | TCP      | 22         | SSH Access  |
-| 0.0.0.0/0   | TCP      | 80         | HTTP        |
-| 0.0.0.0/0   | TCP      | 443        | HTTPS       |
+| Source CIDR | Protocol | Port | Description |
+|-------------|----------|------|-------------|
+| 0.0.0.0/0 | TCP | 22 | SSH |
+| 0.0.0.0/0 | TCP | 80 | HTTP |
+| 0.0.0.0/0 | TCP | 443 | HTTPS |
 
-**Note:** For better security, replace `0.0.0.0/0` with your specific IP address for SSH access.
+> **Tip:** Restrict SSH (port 22) to your IP for better security.
 
-## Step 2: Connect to Your Server
+---
 
-Once the firewall rules are configured, test the connection:
+## Step 2: Connect via SSH
 
 ```bash
-# Test connection (from your local machine)
 ssh -i ssh-key-2026-03-02.key ubuntu@152.70.79.182
 ```
 
-If you see a warning about authenticity, type `yes` to continue.
+---
 
-## Step 3: Run the Server Setup Script
+## Step 3: Run Server Setup Script
 
-### Option A: Upload and run the script
+Upload and execute the setup script (installs Docker, Docker Compose, fail2ban, opens iptables ports):
 
 ```bash
-# From your local machine, upload the script
+# From your LOCAL machine — upload the script
 scp -i ssh-key-2026-03-02.key server-setup.sh ubuntu@152.70.79.182:~/
 
-# Connect to the server
-ssh -i ssh-key-2026-03-02.key ubuntu@152.70.79.182
-
-# Make the script executable and run it
-chmod +x server-setup.sh
-./server-setup.sh
+# On the SERVER
+chmod +x ~/server-setup.sh
+~/server-setup.sh
 ```
 
-### Option B: Run commands directly
-
-Connect to your server and paste the commands:
-
-```bash
-# 1. Update the system
-sudo apt-get update && sudo apt-get upgrade -y
-
-# 2. Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# 3. Setup Permissions (So GitHub Actions doesn't need 'sudo')
-sudo usermod -aG docker $USER
-newgrp docker
-
-# 4. Install Docker Compose
-sudo apt-get install docker-compose-plugin -y
-
-# 5. Install additional tools
-sudo apt-get install -y git nginx certbot python3-certbot-nginx fail2ban
-
-# 6. Configure Ubuntu's internal firewall
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-
-# Save firewall rules
-sudo apt-get install -y iptables-persistent netfilter-persistent
-sudo netfilter-persistent save
-
-# 7. Enable fail2ban for security
-sudo systemctl enable fail2ban
-sudo systemctl start fail2ban
-```
-
-## Step 4: Verify Installation
-
-After the script completes, log out and log back in:
+**Important:** Log out and back in after running for Docker group permissions:
 
 ```bash
 exit
 ssh -i ssh-key-2026-03-02.key ubuntu@152.70.79.182
 ```
 
-Verify Docker is working:
+Verify Docker works:
 
 ```bash
 docker --version
 docker compose version
 ```
 
-## Step 5: Deploy Your Application
+---
 
-### 1. Clone your repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/Invoices.git
-cd Invoices
-```
-
-### 2. Create environment file
+## Step 4: Clone Repository
 
 ```bash
-nano .env
+cd /opt/invoices
+git clone https://github.com/YOUR_USERNAME/Invoices.git .
 ```
 
-Add your production environment variables:
+> If you ran `server-setup.sh`, the `/opt/invoices` directory already exists with correct ownership.
+
+---
+
+## Step 5: Configure Environment
+
+```bash
+cp .env.prod.example .env.prod
+nano .env.prod
+```
+
+Fill in **all** values — at minimum:
 
 ```env
-SECRET_KEY=your-production-secret-key
+SECRET_KEY=<generate-a-real-key>
 DEBUG=False
-ALLOWED_HOSTS=152.70.79.182,yourdomain.com
+ALLOWED_HOSTS=YOUR_DOMAIN,152.70.79.182
+
+POSTGRES_DB=invoices
+POSTGRES_USER=invoices
+POSTGRES_PASSWORD=<strong-random-password>
+
+DB_ENGINE=django.db.backends.postgresql
 DB_NAME=invoices
-DB_USER=postgres
-DB_PASSWORD=your-secure-password
+DB_USER=invoices
+DB_PASSWORD=<same-password-as-above>
 DB_HOST=db
 DB_PORT=5432
-GUEST_USERNAME=testuser
-GUEST_PASSWORD=password123
+
+CORS_ALLOWED_ORIGINS=http://152.70.79.182
+CSRF_TRUSTED_ORIGINS=http://152.70.79.182
+
+# Set to False until SSL is configured, then change to True
+SECURE_SSL_REDIRECT=False
+
+GUEST_USERNAME=guest
+GUEST_PASSWORD=<guest-password>
 ```
 
-### 3. Start the application
+Generate a secret key:
 
 ```bash
-docker compose up -d
+python3 -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
 
-### 4. Run migrations and create superuser
+---
+
+## Step 6: Build and Start
 
 ```bash
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
-docker compose exec web python manage.py collectstatic --noinput
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 ```
 
-## Step 6: Configure Nginx as Reverse Proxy
+This will:
+1. **Build the Django image** (`Dockerfile.prod`) — installs Python deps, Playwright Chromium, collects static files
+2. **Build the Nginx image** (`nginx/Dockerfile`) — builds React frontend with Vite, copies into Nginx
+3. **Start PostgreSQL** and wait for health check
+4. **Run Django migrations** automatically (the CMD in Dockerfile.prod runs `migrate` on startup)
+5. **Start Gunicorn** with 3 workers
 
-Create Nginx configuration:
+Check status:
 
 ```bash
-sudo nano /etc/nginx/sites-available/invoices
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
-Add this configuration:
+---
 
-```nginx
-server {
-    listen 80;
-    server_name 152.70.79.182;  # Replace with your domain later
-
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /static/ {
-        alias /home/ubuntu/Invoices/staticfiles/;
-    }
-}
-```
-
-Enable the site:
+## Step 7: Create Superuser & Load Data
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/invoices /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
+# Create admin account
+docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+
+# (Optional) Load demo data
+docker compose -f docker-compose.prod.yml exec web python manage.py populate_dummy_data
 ```
 
-## Step 7: Configure SSL (Optional but Recommended)
+---
 
-After setting up a domain name:
+## Step 8: Test (HTTP)
+
+Open in your browser:
+
+- **React SPA:** `http://152.70.79.182`
+- **Django Admin:** `http://152.70.79.182/admin/`
+- **API Docs (Swagger):** `http://152.70.79.182/api/docs/`
+
+If everything works, proceed to SSL setup.
+
+---
+
+## Step 9: SSL Certificate (Let's Encrypt)
+
+> **Prerequisite:** You need a domain name pointing to `152.70.79.182`. If you only have an IP, skip this step and use HTTP.
+
+### 9a. Obtain the certificate
 
 ```bash
-sudo certbot --nginx -d yourdomain.com
+docker compose -f docker-compose.prod.yml run --rm certbot \
+  certonly --webroot -w /var/www/certbot -d YOUR_DOMAIN
 ```
 
-## Troubleshooting
+### 9b. Switch Nginx to SSL config
 
-### SSH Connection Refused
-- Check Oracle Cloud Security List rules
-- Verify instance is running
-- Check SSH service: `sudo systemctl status ssh`
+```bash
+# Edit the SSL template with your domain
+sed 's/YOUR_DOMAIN/yourdomain.com/g' nginx/default-ssl.conf > nginx/default.conf
 
-### Cannot Access Web Application
-- Check Docker containers: `docker compose ps`
-- Check logs: `docker compose logs web`
-- Verify Nginx: `sudo systemctl status nginx`
-- Check firewall rules: `sudo iptables -L`
+# Rebuild Nginx with the new config
+docker compose -f docker-compose.prod.yml up -d --build nginx
+```
 
-### Permission Denied for Docker
-- You need to log out and back in after adding user to docker group
-- Or run: `newgrp docker`
+### 9c. Update environment for HTTPS
 
-## Next Steps
+Edit `.env.prod`:
 
-1. Set up automatic deployments with GitHub Actions
-2. Configure domain name
-3. Set up SSL certificate with Let's Encrypt
-4. Configure database backups
-5. Set up monitoring and logging
+```env
+CORS_ALLOWED_ORIGINS=https://YOUR_DOMAIN
+CSRF_TRUSTED_ORIGINS=https://YOUR_DOMAIN
+SECURE_SSL_REDIRECT=True
+```
+
+Restart the web service:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d web
+```
+
+### 9d. Verify HTTPS
+
+- `https://YOUR_DOMAIN` should show the React app
+- `https://YOUR_DOMAIN/admin/` should show Django admin
+
+### 9e. Auto-renewal
+
+The `server-setup.sh` script already created a cron job for auto-renewal. Verify:
+
+```bash
+crontab -l
+# Should show: 0 3 * * * ... certbot renew ...
+```
+
+---
+
+## Updating the Application
+
+```bash
+cd /opt/invoices
+
+# Pull latest code
+git pull origin main
+
+# Rebuild and restart (zero-downtime with --no-deps)
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+# Check logs
+docker compose -f docker-compose.prod.yml logs -f --tail=50
+```
+
+---
 
 ## Useful Commands
 
 ```bash
-# View running containers
-docker compose ps
+# ── Status ────────────────────────────────────────────────────
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs -f nginx
+docker compose -f docker-compose.prod.yml logs -f db
 
-# View logs
-docker compose logs -f web
+# ── Django Management ─────────────────────────────────────────
+docker compose -f docker-compose.prod.yml exec web python manage.py shell
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
+docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
 
-# Restart application
-docker compose restart
+# ── Database ──────────────────────────────────────────────────
+# Backup
+docker compose -f docker-compose.prod.yml exec db pg_dump -U invoices invoices > backup_$(date +%Y%m%d).sql
 
-# Stop application
-docker compose down
+# Restore
+cat backup.sql | docker compose -f docker-compose.prod.yml exec -T db psql -U invoices invoices
 
-# Update application
-git pull
-docker compose up -d --build
+# ── Restart / Stop ────────────────────────────────────────────
+docker compose -f docker-compose.prod.yml restart web
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+# ── Cleanup ───────────────────────────────────────────────────
+docker system prune -af    # Remove unused images/containers (free disk space)
 ```
+
+---
+
+## Troubleshooting
+
+### Can't connect via SSH
+- Check OCI Security List has port 22 open
+- Verify instance is **Running** in OCI Console
+- Check your SSH key file permissions: `chmod 400 ssh-key-2026-03-02.key`
+
+### Site not loading (connection refused)
+- Check containers are running: `docker compose -f docker-compose.prod.yml ps`
+- Check **OCI Security List** has ports 80/443 open
+- Check **iptables**: `sudo iptables -L -n | grep -E '80|443'`
+- Check Nginx logs: `docker compose -f docker-compose.prod.yml logs nginx`
+
+### 502 Bad Gateway
+- Gunicorn crashed — check: `docker compose -f docker-compose.prod.yml logs web`
+- Database not ready — the web container waits for db health check, but check: `docker compose -f docker-compose.prod.yml logs db`
+
+### Static files / CSS missing
+- Verify static volume is shared: `docker compose -f docker-compose.prod.yml exec nginx ls /app/staticfiles/`
+- Re-collect: `docker compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput`
+
+### Admin panel CSS broken
+- Static files are served by Nginx from the shared Docker volume
+- Check `/static/` is routing correctly: `curl -I http://localhost/static/admin/css/base.css`
+
+### Database connection refused
+- Check db container is healthy: `docker compose -f docker-compose.prod.yml ps db`
+- Verify DATABASE_URL in `docker compose -f docker-compose.prod.yml exec web env | grep DATABASE`
+
+### Playwright / PDF generation fails
+- Chromium needs ~500MB RAM — should be fine with 24GB on Free Tier
+- Check: `docker compose -f docker-compose.prod.yml exec web playwright install --with-deps chromium`
+
+---
+
+## File Reference
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.prod.yml` | Production Docker Compose (web + db + nginx + certbot) |
+| `Dockerfile.prod` | Django production image (Gunicorn + Playwright) |
+| `nginx/Dockerfile` | Multi-stage: React build → Nginx image |
+| `nginx/default.conf` | Nginx config (HTTP initially) |
+| `nginx/default-ssl.conf` | Nginx config template (HTTPS — copy after getting cert) |
+| `.env.prod.example` | Template for production environment variables |
+| `server-setup.sh` | One-time OCI VM setup (Docker, firewall, fail2ban) |

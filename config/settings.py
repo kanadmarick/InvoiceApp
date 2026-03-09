@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,11 +58,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',  # Provides template filters like intcomma, naturaltime
+    'drf_spectacular',          # OpenAPI schema generation for DRF (optional, but useful for API docs)
 ]
 
 # Middleware runs on every request/response cycle (order matters!)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',           # HTTPS redirects, HSTS headers
+    'whitenoise.middleware.WhiteNoiseMiddleware',              # Serve static files via Gunicorn/WSGI
     'corsheaders.middleware.CorsMiddleware',                   # CORS — must be before CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',    # Enables session support
     'django.middleware.common.CommonMiddleware',               # URL normalization (trailing slashes)
@@ -95,16 +98,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # Credentials loaded from .env — never hardcode passwords in source code
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'postgres'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': int(os.getenv('DB_PORT', '5432')),
+# If DATABASE_URL is set (e.g., in Docker), use it; otherwise fall back to individual vars
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', 'postgres'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': int(os.getenv('DB_PORT', '5432')),
+        }
+    }
 
 
 # Password validation
@@ -141,11 +150,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'               # URL prefix for static files (CSS, JS, images)
+STATIC_URL = '/static/'               # URL prefix for static files (CSS, JS, images)
 STATICFILES_DIRS = [
     BASE_DIR / 'static',              # Additional static files directory (dev)
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Where collectstatic gathers files for production
+
+# WhiteNoise — serves static files efficiently in production (Gunicorn)
+# Compresses and caches static files with unique hashes for cache-busting
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User uploads like logos and profile images)
 MEDIA_URL = '/media/'                 # URL prefix for user-uploaded files
@@ -192,6 +205,7 @@ REST_FRAMEWORK = {
     # Pagination — return 20 items per page by default
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # For OpenAPI schema generation
 }
 
 
@@ -217,12 +231,34 @@ SIMPLE_JWT = {
 # Required when React frontend runs on a different port/domain
 # =============================================================
 # In development, allow the React dev server
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',   # React dev server (npm start)
-    'http://127.0.0.1:3000',  # Same, alternate address
-]
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 # Allow cookies/auth headers in cross-origin requests
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF trusted origins — required when using session auth behind a reverse proxy
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+
+
+# =============================================================
+# Production Security Settings
+# Activated when DEBUG=False (production environment)
+# =============================================================
+if not DEBUG:
+    # HTTPS/SSL
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000       # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Additional security headers
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
 
 
 # =============================================================

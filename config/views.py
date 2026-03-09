@@ -3,6 +3,9 @@ from decimal import Decimal
 from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions
 
 from billings.models import Invoice, Milestone
 
@@ -147,3 +150,98 @@ def index(request):
     }
 
     return render(request, "index.html", context)
+
+
+# ── Dashboard API Endpoint ──────────────────────────────────────────────
+
+
+class DashboardAPIView(APIView):
+    """
+    GET /api/dashboard/
+    Returns aggregated financial statistics and recent activity as JSON.
+    Same data as the template-based index() view, but for API consumers.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user_businesses = request.user.businesses.all()
+
+        # Fetch all invoices for the current user's businesses
+        invoices = list(Invoice.objects.filter(
+            client__business__in=user_businesses,
+        ).prefetch_related('items', 'milestones', 'client'))
+
+        total_invoices = len(invoices)
+        paid_amount = Decimal('0')
+        pending_amount = Decimal('0')
+        overdue_amount = Decimal('0')
+        pending_count = 0
+        overdue_count = 0
+
+        # Count invoices by status (uses @property on Invoice model)
+        for invoice in invoices:
+            inv_status = invoice.status
+            if inv_status == 'OVERDUE':
+                overdue_count += 1
+            elif inv_status in ('PENDING', 'PARTIALLY_PAID'):
+                pending_count += 1
+
+        # Sum monetary amounts from milestones
+        for milestone in Milestone.objects.filter(
+                invoice__client__business__in=user_businesses):
+            if milestone.status == 'PAID':
+                paid_amount += milestone.amount
+            elif milestone.status == 'OVERDUE':
+                overdue_amount += milestone.amount
+            else:
+                pending_amount += milestone.amount
+
+        # Build recent activity feed
+        recent_activity = []
+
+        for invoice in Invoice.objects.filter(
+            client__business__in=user_businesses,
+        ).prefetch_related('items').order_by('-created_at')[:5]:
+            recent_activity.append({
+                'timestamp': invoice.created_at.isoformat(),
+                'title': f'Invoice {invoice.invoice_number} created',
+                'type': 'invoice',
+                'status': invoice.status,
+            })
+
+        for milestone in (
+            Milestone.objects.filter(
+                status='PAID',
+                invoice__client__business__in=user_businesses,
+            ).select_related('invoice').order_by('-updated_at')[:5]
+        ):
+            recent_activity.append({
+                'timestamp': milestone.updated_at.isoformat(),
+                'title': f'Payment received for {milestone.invoice.invoice_number}',
+                'type': 'payment',
+                'amount': str(milestone.amount),
+            })
+
+        for business in user_businesses.order_by('-created_at')[:5]:
+            recent_activity.append({
+                'timestamp': business.created_at.isoformat(),
+                'title': f'Business "{business.name}"',
+                'type': 'business',
+            })
+
+        # Sort all activity by timestamp (newest first) and take top 6
+        recent_activity = sorted(
+            recent_activity,
+            key=lambda item: item['timestamp'],
+            reverse=True,
+        )[:6]
+
+        return Response({
+            'total_invoices': total_invoices,
+            'paid_amount': str(paid_amount),
+            'pending_amount': str(pending_amount),
+            'overdue_amount': str(overdue_amount),
+            'pending_count': pending_count,
+            'overdue_count': overdue_count,
+            'recent_activity': recent_activity,
+        })

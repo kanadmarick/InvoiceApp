@@ -1,33 +1,20 @@
 from django.urls import path
+from drf_spectacular.views import SpectacularJSONAPIView, SpectacularSwaggerView
 from . import views
+from .pdf import InvoicePDFAPIView
 
 # Namespace for reverse URL lookups (e.g., 'billings:invoice_list')
 app_name = 'billings'
 
 # Invoice CRUD routes — all use UUID-based primary keys in the URL
 urlpatterns = [
-    path(
-        '',
-        views.InvoiceListView.as_view(),
-        name='billing_list'),
-    # /billings/ → invoice list
-    # /billings/invoices/ → same list (canonical URL)
-    path('invoices/', views.InvoiceListView.as_view(), name='invoice_list'),
-    path('invoices/create/', views.InvoiceCreateView.as_view(),
-         name='invoice_create'),  # /billings/invoices/create/
-    path(
-        'invoices/<uuid:pk>/',
-        views.InvoiceDetailView.as_view(),
-        name='invoice_detail'),
-    # Single invoice view
-    path(
-        'invoices/<uuid:pk>/update/',
-        views.InvoiceUpdateView.as_view(),
-        name='invoice_update'),
-    # Edit invoice
-    path(
-        'invoices/<uuid:pk>/delete/',
-        views.InvoiceDeleteView.as_view(),
-        name='invoice_delete'),
-    # Delete invoice
+    # ── OpenAPI schema & Swagger UI ─────────────────────────────────────
+    path('schema/', SpectacularJSONAPIView.as_view(urlconf='billings.urls'), name='schema'),
+    path('docs/', SpectacularSwaggerView.as_view(url_name='billings:schema'), name='swagger-ui'),
+
+    # ── API routes (JSON) ───────────────────────────────────────────────
+    path('', views.InvoiceListCreateAPIView.as_view(), name='billing_list'),
+    path('invoices/', views.InvoiceListCreateAPIView.as_view(), name='invoice_list'),
+    path('invoices/<uuid:pk>/', views.InvoiceDetailAPIView.as_view(), name='invoice_detail'),
+    path('invoices/<uuid:pk>/pdf/', InvoicePDFAPIView.as_view(), name='invoice_pdf'),
 ]

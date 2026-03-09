@@ -4,8 +4,11 @@
 
 # Ignore the Dockerfile and related files, as they are not needed inside the image
 Dockerfile
+Dockerfile.prod
 .dockerignore
 docker-compose.yml
+docker-compose.prod.yml
+docker-compose.test.yml
 
 # Ignore Python virtual environments - dependencies are installed via requirements.txt
 .venv
@@ -29,7 +32,12 @@ logs/
 # Ignore environment files - these are supplied securely at runtime, not built into the image
 .env*
 .env.example
+.env.prod.example
 
 # Ignore local development databases
 *.sqlite3
 db.sqlite3
+
+# Ignore frontend node_modules (npm ci runs inside Docker build)
+frontend/node_modules/
+frontend/dist/
