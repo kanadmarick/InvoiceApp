@@ -151,9 +151,9 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 ```
 
-- **API / Swagger:** http://localhost:8000
-- **React SPA:** http://localhost:3000 (run separately — see below)
-- **Admin:** http://localhost:8000/admin/
+React SPA 	http://152.70.79.182/	
+Swagger API Docs	http://152.70.79.182/api/docs/
+Django Admin	http://152.70.79.182/admin/	
 
 ### Option B: Local setup
 
